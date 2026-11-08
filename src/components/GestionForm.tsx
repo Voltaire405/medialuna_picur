@@ -11,7 +11,7 @@ export type Campo = {
   label: string;
   tipo?: "text" | "email" | "date" | "password" | "tel" | "select";
   requerido?: boolean | "creacion"; // "creacion": solo obligatorio al crear (p. ej. contraseña)
-  opciones?: { value: string; label: string }[];
+  opciones?: { value: string; label: string; deshabilitada?: boolean }[];
   bloqueado?: "edicion" | "siempre"; // "edicion": solo editable al crear (llave)
   soloEdicion?: boolean; // se muestra únicamente con un registro cargado
   ayuda?: string;
@@ -117,7 +117,7 @@ export function GestionForm(p: Props) {
                       >
                         <option value="" disabled>Seleccione…</option>
                         {c.opciones?.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
+                          <option key={o.value} value={o.value} disabled={o.deshabilitada}>{o.label}</option>
                         ))}
                       </select>
                       {bloq && <input type="hidden" name={c.name} value={valores[c.name]} />}

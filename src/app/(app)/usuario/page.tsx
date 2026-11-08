@@ -24,6 +24,7 @@ export default async function UsuarioPage() {
     db.select().from(perfil).where(eq(perfil.estado, 1)).orderBy(perfil.idperfil),
     db.select().from(persona).where(eq(persona.estado, 1)).orderBy(persona.idpersona),
   ]);
+  const conUsuario = new Set(filas.map((f) => f.idpersona)); // 1 persona = 1 usuario (incluye inhabilitados)
   return (
     <GestionForm
       titulo="Usuario"
@@ -37,7 +38,14 @@ export default async function UsuarioPage() {
           tipo: "select",
           requerido: true,
           bloqueado: "edicion",
-          opciones: personas.map((p) => ({ value: p.idpersona, label: `${p.idpersona} — ${p.nom1} ${p.apell1}` })),
+          opciones: personas.map((p) => {
+            const conCuenta = conUsuario.has(p.idpersona);
+            return {
+              value: p.idpersona,
+              label: `${p.idpersona} — ${p.nom1} ${p.apell1}${conCuenta ? " (ya tiene usuario)" : ""}`,
+              deshabilitada: conCuenta,
+            };
+          }),
           ayuda: "Solo personas ya registradas sin usuario",
         },
         { name: "nombreu", label: "Usuario", requerido: true, maxLength: 30 },
