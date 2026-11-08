@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { registrar } from "@/actions/auth";
-import { enviar } from "./enviar";
+import { ClaveInput } from "./ClaveInput";
+import { aMinuscula, enviar } from "./enviar";
 import { Mensaje } from "./Mensaje";
 
 function Seccion({ icono, titulo, children }: { icono: string; titulo: string; children: React.ReactNode }) {
@@ -26,7 +27,11 @@ export function RegistroForm() {
         {label}
         {props.required && <span className="text-red-600"> *</span>}
       </label>
-      <input id={name} name={name} className="campo" {...props} />
+      {props.type === "password" ? (
+        <ClaveInput id={name} name={name} {...props} />
+      ) : (
+        <input id={name} name={name} className="campo" {...props} />
+      )}
     </div>
   );
 
@@ -54,7 +59,7 @@ export function RegistroForm() {
 
       <Seccion icono="🔑" titulo="Datos de acceso">
         <div className="grid gap-4 sm:grid-cols-2">
-          {f("nombreu", "Usuario", { required: true, autoComplete: "username" })}
+          {f("nombreu", "Usuario", { required: true, autoComplete: "username", autoCapitalize: "none", onInput: aMinuscula })}
           {f("contrasena", "Contraseña (mín. 8)", { required: true, type: "password", autoComplete: "new-password", minLength: 8 })}
         </div>
       </Seccion>

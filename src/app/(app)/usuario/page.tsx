@@ -51,7 +51,7 @@ export default async function UsuarioPage() {
           }),
           ayuda: "Solo personas ya registradas sin usuario",
         },
-        { name: "nombreu", label: "Usuario", requerido: true, maxLength: 30 },
+        { name: "nombreu", label: "Usuario", requerido: true, maxLength: 30, minuscula: true },
         { name: "contrasena", label: "Contraseña", tipo: "password", requerido: "creacion", ayuda: "Al modificar, déjela vacía para conservarla" },
         {
           name: "idperfil",

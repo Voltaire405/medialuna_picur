@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import type { Fila, Resultado } from "@/lib/errores";
+import { ClaveInput } from "./ClaveInput";
+import { aMinuscula } from "./enviar";
 import { Mensaje } from "./Mensaje";
 
 export type Campo = {
@@ -16,6 +18,7 @@ export type Campo = {
   soloEdicion?: boolean; // se muestra únicamente con un registro cargado
   ayuda?: string;
   maxLength?: number;
+  minuscula?: boolean; // se pasa a minúsculas mientras se escribe (p. ej. usuario)
 };
 
 type Props = {
@@ -195,6 +198,17 @@ export function GestionForm(p: Props) {
                         </select>
                         {bloq && <input type="hidden" name={c.name} value={valores[c.name]} />}
                       </>
+                    ) : c.tipo === "password" ? (
+                      <ClaveInput
+                        id={id}
+                        name={c.name}
+                        readOnly={bloq}
+                        required={requerido}
+                        maxLength={c.maxLength}
+                        autoComplete="new-password"
+                        value={valores[c.name]}
+                        onChange={(e) => setValores({ ...valores, [c.name]: e.target.value })}
+                      />
                     ) : (
                       <input
                         id={id}
@@ -203,9 +217,13 @@ export function GestionForm(p: Props) {
                         readOnly={bloq}
                         required={requerido}
                         maxLength={c.maxLength}
-                        autoComplete={c.tipo === "password" ? "new-password" : "off"}
+                        autoComplete="off"
+                        autoCapitalize={c.minuscula ? "none" : undefined}
                         value={valores[c.name]}
-                        onChange={(e) => setValores({ ...valores, [c.name]: e.target.value })}
+                        onChange={(e) => {
+                          if (c.minuscula) aMinuscula(e);
+                          setValores({ ...valores, [c.name]: e.target.value });
+                        }}
                         className="campo"
                       />
                     )}

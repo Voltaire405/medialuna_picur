@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { ingresar, recuperar } from "@/actions/auth";
-import { enviar } from "./enviar";
+import { ClaveInput } from "./ClaveInput";
+import { aMinuscula, enviar } from "./enviar";
 import { Mensaje } from "./Mensaje";
 
 export function LoginForm() {
@@ -21,11 +22,11 @@ export function LoginForm() {
         <form onSubmit={enviar(accionLogin)} className="space-y-4">
           <div>
             <label htmlFor="nombreu" className="etiqueta">Usuario</label>
-            <input id="nombreu" name="nombreu" autoComplete="username" className="campo" />
+            <input id="nombreu" name="nombreu" autoComplete="username" autoCapitalize="none" onInput={aMinuscula} className="campo" />
           </div>
           <div>
             <label htmlFor="contrasena" className="etiqueta">Contraseña</label>
-            <input id="contrasena" name="contrasena" type="password" autoComplete="current-password" className="campo" />
+            <ClaveInput id="contrasena" name="contrasena" autoComplete="current-password" />
           </div>
           <Mensaje r={rLogin} />
           <button className="btn-primario w-full" disabled={pendLogin}>{pendLogin ? "Ingresando…" : "Ingresar"}</button>

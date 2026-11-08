@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { cambiarMiContrasena, verificarCorreo } from "@/actions/auth";
+import { ClaveInput } from "./ClaveInput";
 import { enviar } from "./enviar";
 import { Mensaje } from "./Mensaje";
 
@@ -30,7 +31,7 @@ export function ContrasenaForm() {
   const campo = (name: string, label: string, auto: string) => (
     <div>
       <label htmlFor={name} className="etiqueta">{label} <span className="text-red-600">*</span></label>
-      <input id={name} name={name} type="password" required autoComplete={auto} className="campo" />
+      <ClaveInput id={name} name={name} required autoComplete={auto} />
     </div>
   );
   return (
