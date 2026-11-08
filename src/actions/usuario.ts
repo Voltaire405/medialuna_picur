@@ -7,7 +7,7 @@ import { perfil, user } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { correr, ErrorNegocio, type Resultado } from "@/lib/errores";
 import { exigir } from "@/lib/session";
-import { cambiarContrasena, crearUsuario } from "@/lib/usuarios";
+import { cambiarContrasena, crearUsuario, filaUsuario } from "@/lib/usuarios";
 import { contrasenaSchema, plano, usuarioSchema } from "@/lib/validators";
 
 export async function guardarUsuario(modo: "crear" | "modificar", fd: FormData): Promise<Resultado> {
@@ -15,8 +15,11 @@ export async function guardarUsuario(modo: "crear" | "modificar", fd: FormData):
     const u = await exigir("usuario", modo);
     const f = plano(fd);
     const d = usuarioSchema.parse(f);
+    // Solo el administrador llega aquí (exigir): puede dar por verificado el correo, p. ej. en pruebas locales.
+    const emailVerified = f.verificado === "1";
     if (modo === "crear") {
-      await crearUsuario({ ...d, contrasena: contrasenaSchema.parse(f.contrasena) });
+      const id = await crearUsuario({ ...d, contrasena: contrasenaSchema.parse(f.contrasena) });
+      if (emailVerified) await db.update(user).set({ emailVerified }).where(eq(user.id, id));
     } else {
       const [actual] = await db.select().from(user).where(eq(user.id, f.idusuario ?? ""));
       if (!actual) throw new ErrorNegocio("El usuario no existe");
@@ -29,7 +32,10 @@ export async function guardarUsuario(modo: "crear" | "modificar", fd: FormData):
         const [pf] = await db.select().from(perfil).where(eq(perfil.idperfil, d.idperfil));
         if (!pf?.estado) throw new ErrorNegocio("El perfil no existe o está inhabilitado");
       }
-      await db.update(user).set({ username: d.nombreu, idperfil: d.idperfil }).where(eq(user.id, actual.id));
+      await db
+        .update(user)
+        .set({ username: d.nombreu, idperfil: d.idperfil, ...(f.verificado !== undefined && { emailVerified }) })
+        .where(eq(user.id, actual.id));
       if (f.contrasena) await cambiarContrasena(actual.id, contrasenaSchema.parse(f.contrasena));
     }
     revalidatePath("/usuario");
@@ -60,11 +66,12 @@ export async function consultarUsuario(q: string): Promise<Resultado> {
         nombreu: user.username,
         idpersona: user.idpersona,
         idperfil: user.idperfil,
+        verificado: user.emailVerified,
         estado: user.estado,
       })
       .from(user)
       .where(or(eq(user.username, t), eq(user.id, q.trim())));
     if (!fila) throw new ErrorNegocio("No se encontró un usuario con ese nombre");
-    return { mensaje: "Usuario encontrado", fila };
+    return { mensaje: "Usuario encontrado", fila: filaUsuario(fila) };
   });
 }

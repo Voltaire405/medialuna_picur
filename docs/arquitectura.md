@@ -162,7 +162,7 @@ Guardar es el envío de Crear/Modificar y Salir es navegación: no son permisos 
 | Perfil | Alta | Verificación de correo |
 |---|---|---|
 | Comprador (`idperfil = 3`) | Se registra solo en `/registro` (el servidor fija el perfil) | Opcional: se envía el enlace, pero puede ingresar sin verificar |
-| Productor (`idperfil = 2`) | Solo el administrador (Gestión Persona + Gestión Usuario) | Obligatoria: con la contraseña correcta, el ingreso se bloquea y se reenvía el enlace |
+| Productor (`idperfil = 2`) | Solo el administrador (Gestión Persona + Gestión Usuario) | Obligatoria: con la contraseña correcta, el ingreso se bloquea y se reenvía el enlace. El administrador puede marcarla como hecha en Gestión Usuario («Correo verificado») |
 | Administrador (`idperfil = 1`) | Seed | No aplica |
 
 - **Correo confiable** (`lib/verificacion.ts`): se rechazan dominios desechables (lista corta) y dominios sin registro MX o con "null MX". Si el DNS falla por red, se deja pasar.

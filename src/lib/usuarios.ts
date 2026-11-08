@@ -31,6 +31,13 @@ export async function buscarUsuario(donde: SQL | undefined) {
   return { ...resto, vigente: !!(eu && ep && epe) };
 }
 
+// Fila para formularios: el booleano de verificación como "1"/"0" (valor del select) y Sí/No (tabla).
+export const filaUsuario = <T extends { verificado: boolean }>({ verificado, ...resto }: T) => ({
+  ...(resto as Omit<T, "verificado">),
+  verificado: verificado ? "1" : "0",
+  verificadoTxt: verificado ? "Sí" : "No",
+});
+
 type NuevoUsuario ={ nombreu: string; contrasena: string; idperfil: number; idpersona: string };
 
 // Reglas de alta que no dependen de la persona: perfil activo y nombre de usuario libre.

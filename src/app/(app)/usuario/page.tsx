@@ -5,10 +5,11 @@ import { db } from "@/db";
 import { perfil, persona, user } from "@/db/schema";
 import { permisosDe } from "@/lib/permisos";
 import { exigirPagina } from "@/lib/session";
+import { filaUsuario } from "@/lib/usuarios";
 
 export default async function UsuarioPage() {
   const u = await exigirPagina("usuario");
-  const [filas, perfiles, personas] = await Promise.all([
+  const [usuarios, perfiles, personas] = await Promise.all([
     db
       .select({
         idusuario: user.id,
@@ -16,6 +17,7 @@ export default async function UsuarioPage() {
         idpersona: user.idpersona,
         idperfil: user.idperfil,
         perfil: perfil.descripc,
+        verificado: user.emailVerified,
         estado: user.estado,
       })
       .from(user)
@@ -24,6 +26,7 @@ export default async function UsuarioPage() {
     db.select().from(perfil).where(eq(perfil.estado, 1)).orderBy(perfil.idperfil),
     db.select().from(persona).where(eq(persona.estado, 1)).orderBy(persona.idpersona),
   ]);
+  const filas = usuarios.map(filaUsuario);
   const conUsuario = new Set(filas.map((f) => f.idpersona)); // 1 persona = 1 usuario (incluye inhabilitados)
   return (
     <GestionForm
@@ -57,11 +60,23 @@ export default async function UsuarioPage() {
           requerido: true,
           opciones: perfiles.map((p) => ({ value: String(p.idperfil), label: p.descripc })),
         },
+        {
+          name: "verificado",
+          label: "Correo verificado",
+          tipo: "select",
+          requerido: true,
+          opciones: [
+            { value: "0", label: "No" },
+            { value: "1", label: "Sí" },
+          ],
+          ayuda: "Obligatorio para que un productor ingrese. Marcar «Sí» solo si el administrador validó el correo",
+        },
       ]}
       columnas={[
         { name: "nombreu", label: "Usuario" },
         { name: "idpersona", label: "Persona" },
         { name: "perfil", label: "Perfil" },
+        { name: "verificadoTxt", label: "Verificado" },
       ]}
       filas={filas}
       permisos={permisosDe(u.esAdmin, "usuario")}
