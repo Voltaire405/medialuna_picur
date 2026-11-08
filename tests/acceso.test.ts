@@ -132,6 +132,8 @@ describe("registro público", () => {
   });
   it.each([
     ["luis@mailinator.com", /desechables/],
+    ["luis@x.mailinator.com", /desechables/],
+    ["luis@mail", /no es válido/],
     ["luis@sinmx.co", /no recibe/],
   ])("rechaza correo no confiable %s", async (correo, msg) => {
     expect((await m.acciones.registrar(null, fd({ ...base, correo }))).mensaje).toMatch(msg);
