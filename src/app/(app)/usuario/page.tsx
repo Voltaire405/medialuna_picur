@@ -1,0 +1,63 @@
+import { eq } from "drizzle-orm";
+import { GestionForm } from "@/components/GestionForm";
+import { consultarUsuario, guardarUsuario, inhabilitarUsuario } from "@/actions/usuario";
+import { db } from "@/db";
+import { perfil, persona, user } from "@/db/schema";
+import { permisosDe } from "@/lib/permisos";
+import { exigirPagina } from "@/lib/session";
+
+export default async function UsuarioPage() {
+  const u = await exigirPagina("usuario");
+  const [filas, perfiles, personas] = await Promise.all([
+    db
+      .select({
+        idusuario: user.id,
+        nombreu: user.username,
+        idpersona: user.idpersona,
+        idperfil: user.idperfil,
+        perfil: perfil.descripc,
+        estado: user.estado,
+      })
+      .from(user)
+      .innerJoin(perfil, eq(user.idperfil, perfil.idperfil))
+      .orderBy(user.username),
+    db.select().from(perfil).where(eq(perfil.estado, 1)).orderBy(perfil.idperfil),
+    db.select().from(persona).where(eq(persona.estado, 1)).orderBy(persona.idpersona),
+  ]);
+  return (
+    <GestionForm
+      titulo="Usuario"
+      idCampo="idusuario"
+      buscarPor="nombre de usuario"
+      campos={[
+        { name: "idusuario", label: "ID Usuario", bloqueado: "siempre", soloEdicion: true },
+        {
+          name: "idpersona",
+          label: "Persona",
+          tipo: "select",
+          requerido: true,
+          bloqueado: "edicion",
+          opciones: personas.map((p) => ({ value: p.idpersona, label: `${p.idpersona} — ${p.nom1} ${p.apell1}` })),
+          ayuda: "Solo personas ya registradas sin usuario",
+        },
+        { name: "nombreu", label: "Usuario", requerido: true, maxLength: 30 },
+        { name: "contrasena", label: "Contraseña", tipo: "password", requerido: "creacion", ayuda: "Al modificar, déjela vacía para conservarla" },
+        {
+          name: "idperfil",
+          label: "Perfil",
+          tipo: "select",
+          requerido: true,
+          opciones: perfiles.map((p) => ({ value: String(p.idperfil), label: p.descripc })),
+        },
+      ]}
+      columnas={[
+        { name: "nombreu", label: "Usuario" },
+        { name: "idpersona", label: "Persona" },
+        { name: "perfil", label: "Perfil" },
+      ]}
+      filas={filas}
+      permisos={permisosDe(u.esAdmin, "usuario")}
+      acciones={{ guardar: guardarUsuario, inhabilitar: inhabilitarUsuario, consultar: consultarUsuario }}
+    />
+  );
+}
