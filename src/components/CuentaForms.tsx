@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { verificarCorreo } from "@/actions/auth";
+import { cambiarMiContrasena, verificarCorreo } from "@/actions/auth";
 import { enviar } from "./enviar";
 import { Mensaje } from "./Mensaje";
 
@@ -21,6 +21,28 @@ export function VerificarForm({ token }: { token: string }) {
       ) : (
         <button className="btn-primario w-full" disabled={pendiente}>{pendiente ? "Verificando…" : "Verificar mi correo"}</button>
       )}
+    </form>
+  );
+}
+
+export function ContrasenaForm() {
+  const [r, accion, pendiente] = useActionState(cambiarMiContrasena, null);
+  const campo = (name: string, label: string, auto: string) => (
+    <div>
+      <label htmlFor={name} className="etiqueta">{label} <span className="text-red-600">*</span></label>
+      <input id={name} name={name} type="password" required autoComplete={auto} className="campo" />
+    </div>
+  );
+  return (
+    <form onSubmit={enviar(accion)} className="space-y-4">
+      {campo("actual", "Contraseña actual", "current-password")}
+      {campo("nueva", "Nueva contraseña (mín. 8)", "new-password")}
+      {campo("confirmar", "Confirmar nueva contraseña", "new-password")}
+      <Mensaje r={r} />
+      <div className="flex flex-wrap gap-2">
+        <button className="btn-primario" disabled={pendiente}>{pendiente ? "Guardando…" : "Cambiar contraseña"}</button>
+        <Link href="/" className="btn-suave">Salir</Link>
+      </div>
     </form>
   );
 }

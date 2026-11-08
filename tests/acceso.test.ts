@@ -153,6 +153,28 @@ describe("registro público", () => {
   });
 });
 
+describe("cambiar mi contraseña", () => {
+  it("con revokeOtherSessions la sesión actual sigue viva y las demás se cierran", async () => {
+    await m.crearPersona(persona("66666"));
+    await m.crearUsuario({ nombreu: "dora", contrasena: "clave1234", idperfil: 3, idpersona: "66666" });
+    const entrar = async () => {
+      const res = await m.auth.api.signInUsername({ body: { username: "dora", password: "clave1234" }, asResponse: true });
+      return new Headers({ cookie: res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ") });
+    };
+    const otra = await entrar();
+    const actual = await entrar();
+    const res = await m.auth.api.changePassword({
+      body: { currentPassword: "clave1234", newPassword: "nueva-clave-1", revokeOtherSessions: true },
+      headers: actual,
+      asResponse: true,
+    });
+    expect(res.ok).toBe(true);
+    const nueva = new Headers({ cookie: res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ") });
+    expect(await m.auth.api.getSession({ headers: nueva })).not.toBeNull();
+    expect(await m.auth.api.getSession({ headers: otra })).toBeNull();
+  });
+});
+
 describe("verificación obligatoria del productor", () => {
   it("no ingresa sin verificar; el enlace verifica una sola vez y registra la autorización", async () => {
     await m.crearPersona(persona("55555"));

@@ -11,6 +11,7 @@ import { correr, ErrorNegocio, type Resultado } from "@/lib/errores";
 import { enviarCorreo } from "@/lib/mail";
 import { COMPRADOR_PERFIL } from "@/lib/permisos";
 import { crearPersona } from "@/lib/personas";
+import { getUsuario } from "@/lib/session";
 import { buscarUsuario, cambiarContrasena, contrasenaValida, crearUsuario, validarAltaUsuario } from "@/lib/usuarios";
 import { contrasenaSchema, personaSchema, plano, usuarioSchema } from "@/lib/validators";
 import { confirmarVerificacion, enviarVerificacion, exigeVerificacion, exigirCorreoConfiable } from "@/lib/verificacion";
@@ -102,6 +103,27 @@ export async function registrar(_: Resultado | null, fd: FormData): Promise<Resu
       console.error(e);
     }
     return "Registro exitoso. Ya puede ingresar; le enviamos un enlace para verificar su correo";
+  });
+}
+
+// Cambio de contraseña del propio usuario. Cierra las demás sesiones y conserva la actual.
+export async function cambiarMiContrasena(_: Resultado | null, fd: FormData): Promise<Resultado> {
+  return correr(async () => {
+    if (!(await getUsuario())) throw new ErrorNegocio("Su sesión expiró. Ingrese de nuevo");
+    const f = plano(fd);
+    if (!f.actual) throw new ErrorNegocio("Ingrese su contraseña actual");
+    const nueva = contrasenaSchema.parse(f.nueva ?? "");
+    if (nueva !== f.confirmar) throw new ErrorNegocio("La confirmación no coincide con la nueva contraseña");
+    if (nueva === f.actual) throw new ErrorNegocio("La nueva contraseña debe ser distinta de la actual");
+    try {
+      await auth.api.changePassword({
+        body: { currentPassword: f.actual, newPassword: nueva, revokeOtherSessions: true },
+        headers: await headers(),
+      });
+    } catch {
+      throw new ErrorNegocio("La contraseña actual es incorrecta");
+    }
+    return "Contraseña actualizada";
   });
 }
 

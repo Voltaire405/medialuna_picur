@@ -10,6 +10,7 @@ const MENU = [
   { href: "/perfil", label: "Gestión Perfil", gestion: "perfil" },
   { href: "/usuario", label: "Gestión Usuario", gestion: "usuario" },
   { href: "/persona", label: "Gestión Persona", gestion: "persona" },
+  { href: "/contrasena", label: "Mi contraseña", gestion: null },
 ] as const;
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
