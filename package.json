@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "test -n \"$TURSO_DATABASE_URL\" || { echo 'Falta TURSO_DATABASE_URL en Vercel' >&2; exit 1; }; drizzle-kit migrate && next build",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
