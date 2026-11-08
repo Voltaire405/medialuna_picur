@@ -7,6 +7,7 @@ import { auth } from "./auth";
 import { ErrorNegocio } from "./errores";
 import { ADMIN_PERFIL, puede, type Accion, type Gestion } from "./permisos";
 import { buscarUsuario } from "./usuarios";
+import { exigeVerificacion } from "./verificacion";
 
 // Usuario autenticado y vigente. Se relee de la BD en cada petición: si el
 // usuario, su perfil o su persona fueron inhabilitados, deja de tener acceso.
@@ -14,7 +15,8 @@ export const getUsuario = cache(async () => {
   const s = await auth.api.getSession({ headers: await headers() });
   if (!s) return null;
   const u = await buscarUsuario(eq(user.id, s.user.id));
-  return u?.vigente ? { ...u, esAdmin: u.idperfil === ADMIN_PERFIL } : null;
+  // Un productor sin correo verificado pierde también las sesiones abiertas (p. ej. si cambió su correo).
+  return u?.vigente && !exigeVerificacion(u) ? { ...u, esAdmin: u.idperfil === ADMIN_PERFIL } : null;
 });
 
 export type UsuarioActual = NonNullable<Awaited<ReturnType<typeof getUsuario>>>;

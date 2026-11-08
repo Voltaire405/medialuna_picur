@@ -37,7 +37,7 @@ flowchart LR
 
 ## Modelo de datos
 
-El modelo del parcial (`perfil`, `usuario`, `persona`) se respeta tal cual. Better Auth exige `sesion`, `cuenta` y `verificacion`; su tabla `user` **es** `usuario` (mapeada por nombre de columna), con `idperfil`, `idpersona` y `estado` como campos adicionales.
+El modelo del parcial (`perfil`, `usuario`, `persona`) se respeta con dos diferencias que hay que explicar: la contraseña (hash) vive en `cuenta.contrasena` y no en `usuario`, y `persona.fecha_autoriza` guarda la evidencia de la autorización de datos (Ley 1581, art. 9). Better Auth exige `sesion`, `cuenta` y `verificacion`; su tabla `user` **es** `usuario` (mapeada por nombre de columna), con `idperfil`, `idpersona` y `estado` como campos adicionales, y `email_verified` para la verificación de correo.
 
 ```mermaid
 erDiagram
@@ -149,11 +149,24 @@ Se aplican **en servidor** (`exigir` en cada action, `exigirPagina` en cada pág
 |---|:-:|:-:|:-:|:-:|
 | Perfil | Admin | Admin | Admin | Admin |
 | Usuario | Admin | Admin | Admin | Admin |
-| Persona | Todos | Todos* | Todos* | Admin |
+| Persona | Admin** | Todos* | Todos* | Admin |
 
 Guardar es el envío de Crear/Modificar y Salir es navegación: no son permisos propios.
 
-\* Un perfil no administrador solo ve y modifica **su propia** persona. Administrador = `idperfil = 1` (sembrado, no modificable ni inhabilitable). El registro público (`/registro`) crea persona + usuario con perfil elegido entre los no administradores.
+\* Un perfil no administrador solo ve y modifica **su propia** persona. Administrador = `idperfil = 1` (sembrado, no modificable ni inhabilitable).
+
+\*\* El "Crear persona" del actor Persona en la tabla del parcial es el **autorregistro** (botón Registrarse → `/registro`, sin sesión), no dar de alta a terceros con sesión.
+
+## Cuentas: quién se registra y verificación de correo
+
+| Perfil | Alta | Verificación de correo |
+|---|---|---|
+| Comprador (`idperfil = 3`) | Se registra solo en `/registro` (el servidor fija el perfil) | Opcional: se envía el enlace, pero puede ingresar sin verificar |
+| Productor (`idperfil = 2`) | Solo el administrador (Gestión Persona + Gestión Usuario) | Obligatoria: con la contraseña correcta, el ingreso se bloquea y se reenvía el enlace |
+| Administrador (`idperfil = 1`) | Seed | No aplica |
+
+- **Correo confiable** (`lib/verificacion.ts`): se rechazan dominios desechables (lista corta) y dominios sin registro MX o con "null MX". Si el DNS falla por red, se deja pasar.
+- **Enlace** `/verificar?token=…`: token aleatorio guardado como hash en `verificacion`, vence en 24 h, un solo uso y atado al correo vigente (cambiar el correo invalida el enlace y desmarca la verificación). Se confirma con un botón (POST) que además registra la autorización Ley 1581 si faltaba.
 
 ## Despliegue y configuración
 

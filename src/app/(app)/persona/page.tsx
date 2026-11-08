@@ -4,6 +4,7 @@ import { consultarPersona, guardarPersona, inhabilitarPersona } from "@/actions/
 import { db } from "@/db";
 import { persona } from "@/db/schema";
 import { permisosDe } from "@/lib/permisos";
+import { filaPersona } from "@/lib/personas";
 import { exigirPagina } from "@/lib/session";
 
 const campos: Campo[] = [
@@ -17,12 +18,15 @@ const campos: Campo[] = [
   { name: "movil", label: "Móvil", tipo: "tel", requerido: true, maxLength: 10, ayuda: "10 dígitos, empieza por 3" },
   { name: "correo", label: "Correo electrónico", tipo: "email", requerido: true, maxLength: 120 },
   { name: "fecha_nac", label: "Fecha de nacimiento", tipo: "date" },
+  { name: "fecha_autoriza", label: "Autorizó datos (Ley 1581)", bloqueado: "siempre", soloEdicion: true, ayuda: "Se registra al registrarse o al verificar el correo" },
 ];
 
 export default async function PersonaPage() {
   const u = await exigirPagina("persona");
   // Perfiles no administradores solo ven y editan su propia persona.
-  const filas = await db.select().from(persona).where(u.esAdmin ? undefined : eq(persona.idpersona, u.idpersona)).orderBy(persona.idpersona);
+  const filas = (
+    await db.select().from(persona).where(u.esAdmin ? undefined : eq(persona.idpersona, u.idpersona)).orderBy(persona.idpersona)
+  ).map(filaPersona);
   return (
     <GestionForm
       titulo="Persona"

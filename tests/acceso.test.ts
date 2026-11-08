@@ -4,6 +4,12 @@ import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+// DNS determinista: todo dominio tiene MX salvo "sinmx.co".
+vi.mock("node:dns/promises", () => ({
+  resolveMx: async (d: string) =>
+    d === "sinmx.co" ? Promise.reject(Object.assign(new Error("dns"), { code: "ENOTFOUND" })) : [{ exchange: `mx.${d}`, priority: 1 }],
+}));
+
 // BD temporal con las migraciones reales; el módulo db lee el entorno al importarse.
 process.env.TURSO_DATABASE_URL = `file:${join(mkdtempSync(join(tmpdir(), "medialuna-")), "test.db")}`;
 process.env.BETTER_AUTH_SECRET = "x".repeat(32);
@@ -26,7 +32,11 @@ beforeAll(async () => {
   const { migrate } = await import("drizzle-orm/libsql/migrator");
   m = await cargar();
   await migrate(m.db, { migrationsFolder: "drizzle" });
-  await m.db.insert(m.perfil).values([{ idperfil: 1, descripc: "Administrador" }, { idperfil: 2, descripc: "Productor" }]);
+  await m.db.insert(m.perfil).values([
+    { idperfil: 1, descripc: "Administrador" },
+    { idperfil: 2, descripc: "Productor" },
+    { idperfil: 3, descripc: "Comprador" },
+  ]);
   await m.crearPersona(persona("11111"));
   await m.crearPersona(persona("22222"));
   await m.crearUsuario({ nombreu: "ana", contrasena: "clave1234", idperfil: 2, idpersona: "11111" });
@@ -120,15 +130,48 @@ describe("registro público", () => {
   it("exige autorización de datos", async () => {
     expect((await m.acciones.registrar(null, fd({ ...base, autoriza: "" }))).mensaje).toMatch(/Ley 1581/);
   });
-  it("no permite elegir el perfil Administrador", async () => {
-    expect((await m.acciones.registrar(null, fd({ ...base, idperfil: "1" }))).ok).toBe(false);
+  it.each([
+    ["luis@mailinator.com", /desechables/],
+    ["luis@sinmx.co", /no recibe/],
+  ])("rechaza correo no confiable %s", async (correo, msg) => {
+    expect((await m.acciones.registrar(null, fd({ ...base, correo }))).mensaje).toMatch(msg);
   });
-  it("crea persona + usuario y no deja persona huérfana si el usuario es inválido", async () => {
+  it("crea persona + usuario Comprador (ignora el perfil enviado), guarda la autorización y no deja persona huérfana", async () => {
     const mal = await m.acciones.registrar(null, fd({ ...base, nombreu: "ana" })); // usuario ya en uso
     expect(mal.ok).toBe(false);
     expect(await m.db.select().from(m.persona).where(eq(m.persona.idpersona, "44444"))).toHaveLength(0);
-    const bien = await m.acciones.registrar(null, fd(base));
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const bien = await m.acciones.registrar(null, fd({ ...base, idperfil: "1" }));
+    log.mockRestore();
     expect(bien.ok).toBe(true);
+    const [u] = await m.db.select().from(m.user).where(eq(m.user.username, "luis"));
+    expect(u.idperfil).toBe(3);
+    expect(u.emailVerified).toBe(false); // opcional para el comprador: igual puede ingresar
     expect(await m.validarAcceso("luis", "clave1234")).toBeNull();
+    const [p] = await m.db.select().from(m.persona).where(eq(m.persona.idpersona, "44444"));
+    expect(p.fecha_autoriza).toBeInstanceOf(Date);
+  });
+});
+
+describe("verificación obligatoria del productor", () => {
+  it("no ingresa sin verificar; el enlace verifica una sola vez y registra la autorización", async () => {
+    await m.crearPersona(persona("55555"));
+    await m.crearUsuario({ nombreu: "carla", contrasena: "clave1234", idperfil: 2, idpersona: "55555" });
+    expect((await m.acciones.ingresar(null, fd({ nombreu: "carla", contrasena: "mala-clave" }))).mensaje).toBe(m.MSG.claveIncorrecta);
+
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const r = await m.acciones.ingresar(null, fd({ nombreu: "carla", contrasena: "clave1234" }));
+    const correo = String(log.mock.calls.at(-1)?.[0]);
+    log.mockRestore();
+    expect(r.mensaje).toMatch(/Debe verificar su correo/);
+    const token = /token=(\S+)/.exec(correo)![1];
+
+    expect((await m.acciones.verificarCorreo(null, fd({ token }))).mensaje).toMatch(/Ley 1581/);
+    expect((await m.acciones.verificarCorreo(null, fd({ token, autoriza: "on" }))).ok).toBe(true);
+    expect((await m.acciones.verificarCorreo(null, fd({ token, autoriza: "on" }))).ok).toBe(false); // un solo uso
+    const [u] = await m.db.select().from(m.user).where(eq(m.user.username, "carla"));
+    expect(u.emailVerified).toBe(true);
+    const [p] = await m.db.select().from(m.persona).where(eq(m.persona.idpersona, "55555"));
+    expect(p.fecha_autoriza).toBeInstanceOf(Date);
   });
 });

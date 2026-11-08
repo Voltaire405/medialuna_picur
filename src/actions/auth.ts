@@ -4,15 +4,16 @@ import { randomBytes } from "node:crypto";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { eq, or } from "drizzle-orm";
-import { persona } from "@/db/schema";
+import { persona, user } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { MSG, validarAcceso } from "@/lib/acceso";
 import { correr, ErrorNegocio, type Resultado } from "@/lib/errores";
 import { enviarCorreo } from "@/lib/mail";
-import { ADMIN_PERFIL } from "@/lib/permisos";
+import { COMPRADOR_PERFIL } from "@/lib/permisos";
 import { crearPersona } from "@/lib/personas";
-import { buscarUsuario, cambiarContrasena, crearUsuario, validarAltaUsuario } from "@/lib/usuarios";
+import { buscarUsuario, cambiarContrasena, contrasenaValida, crearUsuario, validarAltaUsuario } from "@/lib/usuarios";
 import { contrasenaSchema, personaSchema, plano, usuarioSchema } from "@/lib/validators";
+import { confirmarVerificacion, enviarVerificacion, exigeVerificacion, exigirCorreoConfiable } from "@/lib/verificacion";
 
 export async function ingresar(_: Resultado | null, fd: FormData): Promise<Resultado> {
   const f = plano(fd);
@@ -20,6 +21,19 @@ export async function ingresar(_: Resultado | null, fd: FormData): Promise<Resul
   const contrasena = f.contrasena ?? "";
   const error = await validarAcceso(nombreu, contrasena);
   if (error) return { ok: false, mensaje: error };
+  // Productor sin correo verificado: se comprueba la contraseña antes de reenviar el enlace,
+  // para que conocer solo el usuario no permita disparar correos.
+  const u = (await buscarUsuario(eq(user.username, nombreu)))!;
+  if (exigeVerificacion(u)) {
+    if (!(await contrasenaValida(u.idusuario, contrasena))) return { ok: false, mensaje: MSG.claveIncorrecta };
+    try {
+      await enviarVerificacion(u.idusuario, u.correo);
+    } catch (e) {
+      console.error(e);
+      return { ok: false, mensaje: "Debe verificar su correo, pero no se pudo enviar el enlace. Intente más tarde" };
+    }
+    return { ok: false, mensaje: `Debe verificar su correo antes de ingresar. Enviamos un enlace a ${u.correo}` };
+  }
   try {
     await auth.api.signInUsername({ body: { username: nombreu, password: contrasena }, headers: await headers() });
   } catch {
@@ -65,21 +79,38 @@ export async function recuperar(_: Resultado | null, fd: FormData): Promise<Resu
   });
 }
 
-// Registrarse: Gestión Persona + credenciales. El perfil lo elige el usuario (nunca Administrador).
+// Registrarse (Gestión Persona sin sesión): solo compradores. Al productor lo da de alta el administrador.
 export async function registrar(_: Resultado | null, fd: FormData): Promise<Resultado> {
   return correr(async () => {
     const f = plano(fd);
     if (f.autoriza !== "on") throw new ErrorNegocio("Debe autorizar el tratamiento de datos personales (Ley 1581 de 2012)");
     const p = personaSchema.parse(f);
-    const { nombreu, idperfil } = usuarioSchema.parse({ ...f, idpersona: p.idpersona });
+    // El perfil lo fija el servidor después del spread: el cliente no puede colar otro.
+    const { nombreu, idperfil } = usuarioSchema.parse({ ...f, idpersona: p.idpersona, idperfil: COMPRADOR_PERFIL });
     const contrasena = contrasenaSchema.parse(f.contrasena);
-    if (idperfil === ADMIN_PERFIL) throw new ErrorNegocio("Seleccione un perfil válido");
+    await exigirCorreoConfiable(p.correo);
     // Todo lo validable va antes de la primera escritura: nunca se borra una persona.
     // ponytail: un fallo inesperado entre ambos inserts (BD caída) deja la persona sin usuario;
     // el administrador puede crearle el usuario desde Gestión Usuario.
     await validarAltaUsuario(nombreu, idperfil);
-    await crearPersona(p);
-    await crearUsuario({ nombreu, contrasena, idperfil, idpersona: p.idpersona });
-    return "Registro exitoso. Ya puede ingresar con su usuario y contraseña";
+    await crearPersona({ ...p, fecha_autoriza: new Date() });
+    const idusuario = await crearUsuario({ nombreu, contrasena, idperfil, idpersona: p.idpersona });
+    // Para el comprador la verificación es opcional: si el correo falla, el registro sigue siendo válido.
+    try {
+      await enviarVerificacion(idusuario, p.correo);
+    } catch (e) {
+      console.error(e);
+    }
+    return "Registro exitoso. Ya puede ingresar; le enviamos un enlace para verificar su correo";
+  });
+}
+
+// Botón del correo de verificación: confirma el correo y la autorización de datos.
+export async function verificarCorreo(_: Resultado | null, fd: FormData): Promise<Resultado> {
+  return correr(async () => {
+    const f = plano(fd);
+    if (f.autoriza !== "on") throw new ErrorNegocio("Debe autorizar el tratamiento de datos personales (Ley 1581 de 2012)");
+    await confirmarVerificacion(f.token ?? "");
+    return "Correo verificado. Ya puede ingresar";
   });
 }

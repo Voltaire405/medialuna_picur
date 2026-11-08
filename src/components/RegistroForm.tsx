@@ -6,11 +6,6 @@ import { registrar } from "@/actions/auth";
 import { enviar } from "./enviar";
 import { Mensaje } from "./Mensaje";
 
-type Opcion = { value: string; label: string };
-
-// Ícono por perfil; el texto viene de la BD, así que se busca por palabra clave.
-const icono = (label: string) => (/compra/i.test(label) ? "🧺" : /produc/i.test(label) ? "🌱" : "🌾");
-
 function Seccion({ icono, titulo, children }: { icono: string; titulo: string; children: React.ReactNode }) {
   return (
     <fieldset className="space-y-4">
@@ -23,7 +18,7 @@ function Seccion({ icono, titulo, children }: { icono: string; titulo: string; c
   );
 }
 
-export function RegistroForm({ perfiles }: { perfiles: Opcion[] }) {
+export function RegistroForm() {
   const [r, accion, pendiente] = useActionState(registrar, null);
   const f = (name: string, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <div>
@@ -37,22 +32,7 @@ export function RegistroForm({ perfiles }: { perfiles: Opcion[] }) {
 
   return (
     <form onSubmit={enviar(accion)} className="space-y-8">
-      <Seccion icono="🧑‍🌾" titulo="¿Quién es usted?">
-        <div>
-          <span className="etiqueta">Me registro como <span className="text-red-600">*</span></span>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {perfiles.map((p) => (
-              <label
-                key={p.value}
-                className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-hoja-100 bg-white p-3 transition hover:border-hoja-300 has-[:checked]:border-hoja-500 has-[:checked]:bg-hoja-50 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-hoja-300/40"
-              >
-                <input type="radio" name="idperfil" value={p.value} required className="sr-only" />
-                <span aria-hidden="true" className="text-2xl">{icono(p.label)}</span>
-                <span className="font-semibold text-hoja-900">{p.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+      <Seccion icono="🧺" titulo="¿Quién es usted?">
         <div className="grid gap-4 sm:grid-cols-2">
           {f("idpersona", "Identificación", { required: true, inputMode: "numeric", maxLength: 15 })}
           {f("fecha_nac", "Fecha de nacimiento", { type: "date" })}
@@ -67,7 +47,7 @@ export function RegistroForm({ perfiles }: { perfiles: Opcion[] }) {
         <div className="grid gap-4 sm:grid-cols-2">
           {f("movil", "Móvil", { required: true, inputMode: "tel", maxLength: 10, placeholder: "3001234567" })}
           {f("tele", "Teléfono", { inputMode: "tel", maxLength: 10 })}
-          {f("correo", "Correo electrónico", { required: true, type: "email", placeholder: "nombre@correo.com" })}
+          {f("correo", "Correo electrónico (no temporal)", { required: true, type: "email", placeholder: "nombre@correo.com" })}
           {f("direccion", "Dirección (vereda / municipio)", { placeholder: "Vereda La Esperanza, Marinilla" })}
         </div>
       </Seccion>

@@ -22,6 +22,8 @@ export const persona = sqliteTable("persona", {
   movil: text("movil").notNull(),
   correo: text("correo").notNull().unique(),
   fecha_nac: text("fecha_nac"), // yyyy-MM-dd
+  // Evidencia de la autorización de tratamiento de datos (Ley 1581 de 2012, art. 9).
+  fecha_autoriza: integer("fecha_autoriza", { mode: "timestamp_ms" }),
   estado: estado(),
 });
 

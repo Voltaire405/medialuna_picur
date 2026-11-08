@@ -17,6 +17,7 @@ export async function buscarUsuario(donde: SQL | undefined) {
       nombre: persona.nom1,
       apellido: persona.apell1,
       correo: persona.correo,
+      verificado: user.emailVerified,
       eu: user.estado,
       ep: perfil.estado,
       epe: persona.estado,
@@ -30,7 +31,7 @@ export async function buscarUsuario(donde: SQL | undefined) {
   return { ...resto, vigente: !!(eu && ep && epe) };
 }
 
-type NuevoUsuario = { nombreu: string; contrasena: string; idperfil: number; idpersona: string };
+type NuevoUsuario ={ nombreu: string; contrasena: string; idperfil: number; idpersona: string };
 
 // Reglas de alta que no dependen de la persona: perfil activo y nombre de usuario libre.
 // `registrar` las valida antes de insertar la persona para no dejarla huérfana.
@@ -67,6 +68,13 @@ export async function crearUsuario({ nombreu, contrasena, idperfil, idpersona }:
     password: await ctx.password.hash(contrasena),
   });
   return creado.id;
+}
+
+// Verifica la contraseña sin abrir sesión (para decidir antes de ingresar).
+export async function contrasenaValida(idusuario: string, contrasena: string) {
+  const ctx = await auth.$context;
+  const cuenta = await ctx.internalAdapter.findCredentialAccount(idusuario);
+  return !!cuenta?.password && (await ctx.password.verify({ hash: cuenta.password, password: contrasena }));
 }
 
 // Cambia la contraseña y cierra las sesiones abiertas del usuario.
