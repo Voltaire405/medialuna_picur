@@ -10,6 +10,13 @@ async function main() {
   const { crearUsuario } = await import("@/lib/usuarios");
   const { eq } = await import("drizzle-orm");
   const e = process.env;
+  // En una base remota (Turso) no se aceptan las credenciales de ejemplo: son públicas en el repo.
+  if (e.TURSO_DATABASE_URL) {
+    if (!e.SEED_ADMIN_PASSWORD || e.SEED_ADMIN_PASSWORD === "Admin12345")
+      throw new Error("Defina SEED_ADMIN_PASSWORD (distinta de la de ejemplo) para sembrar una base remota");
+    if (!e.SEED_ADMIN_EMAIL || e.SEED_ADMIN_EMAIL === "admin@medialuna.local")
+      throw new Error("Defina SEED_ADMIN_EMAIL con un correo real para sembrar una base remota");
+  }
 
   // El id 1 debe ser Administrador (ADMIN_PERFIL en lib/permisos.ts).
   await db
@@ -29,11 +36,12 @@ async function main() {
       nom1: "Administrador",
       apell1: "Medialuna",
       movil: "3000000000",
-      correo: e.SEED_ADMIN_EMAIL ?? "admin@medialuna.local",
+      // Login y recuperación comparan en minúsculas.
+      correo: (e.SEED_ADMIN_EMAIL ?? "admin@medialuna.local").trim().toLowerCase(),
     })
     .onConflictDoNothing();
 
-  const nombreu = e.SEED_ADMIN_USER ?? "admin";
+  const nombreu = (e.SEED_ADMIN_USER ?? "admin").trim().toLowerCase();
   const [existe] = await db.select().from(user).where(eq(user.username, nombreu));
   if (!existe)
     await crearUsuario({ nombreu, contrasena: e.SEED_ADMIN_PASSWORD ?? "Admin12345", idperfil: 1, idpersona });

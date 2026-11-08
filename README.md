@@ -21,10 +21,10 @@ pnpm dev                 # http://localhost:3000
 
 ## Despliegue en Vercel
 
-- Variables en Vercel: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (la URL pública), `RESEND_API_KEY`, `MAIL_FROM`.
-- Vercel ejecuta `pnpm vercel-build`: aplica las migraciones de `drizzle/` en Turso y luego `next build`. Si falta `TURSO_DATABASE_URL`, el build falla en vez de migrar una base local.
+- Variables en Vercel: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (la URL pública), `RESEND_API_KEY`, `MAIL_FROM` y `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` (opcionales `SEED_ADMIN_USER`, `SEED_ADMIN_ID`).
+- Vercel ejecuta `pnpm vercel-build`: aplica las migraciones de `drizzle/` en Turso, siembra perfiles y administrador (idempotente: si el administrador ya existe no cambia su contraseña) y luego `next build`.
+- El build falla si falta `TURSO_DATABASE_URL`, o si `SEED_ADMIN_PASSWORD`/`SEED_ADMIN_EMAIL` faltan o son los de ejemplo.
 - Las *preview deployments* usan las variables de su entorno: si apuntan a la misma base de producción, también la migran.
-- La siembra (administrador) no es automática: una sola vez, desde local con las credenciales de Turso, `pnpm db:seed`.
 
 ## Verificación
 
