@@ -1,12 +1,13 @@
-// Matriz de permisos del parcial: Administrador hace todo. Cualquier otro perfil opera
-// Persona (crear, consultar, modificar; consulta y modificación solo de la propia) y no inhabilita.
+// Matriz de permisos del parcial: Administrador hace todo. Cualquier otro perfil solo consulta
+// y modifica su propia Persona. El "Crear persona" del actor Persona es el autorregistro
+// (/registro, sin sesión): con sesión nadie salvo el administrador da de alta personas.
 export const ADMIN_PERFIL = 1;
 
 export type Gestion = "perfil" | "usuario" | "persona";
 export type Accion = "crear" | "consultar" | "modificar" | "inhabilitar";
 
 const PERSONA: Partial<Record<Gestion, Accion[]>> = {
-  persona: ["crear", "consultar", "modificar"],
+  persona: ["consultar", "modificar"],
 };
 
 export function puede(esAdmin: boolean, gestion: Gestion, accion: Accion): boolean {
