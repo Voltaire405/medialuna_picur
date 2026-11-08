@@ -19,7 +19,7 @@ export default async function LoginPage() {
           <h1 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">Medialuna</h1>
           <p className="mt-2 text-lg text-hoja-100">Mercado campesino digital</p>
           <p className="mt-4 max-w-sm text-sm text-hoja-100/90">
-            El productor publica, el comprador encuentra. Menos intermediarios, mejor precio para el campo antioqueño.
+            El productor publica, el comprador encuentra. Menos intermediarios, mejor precio para el campo Colombiano.
           </p>
         </section>
         <div className="flex justify-center md:justify-end">

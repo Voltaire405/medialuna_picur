@@ -20,7 +20,7 @@ export default async function RegistroPage() {
           <Logo className="h-12 w-12" />
           <p className="mt-4 text-sm font-semibold tracking-wide text-luna uppercase">Gestión Persona</p>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight md:text-4xl">Regístrese como comprador</h1>
-          <p className="mt-2 text-hoja-100">Encuentre productos del campo antioqueño directamente de quien los cultiva.</p>
+          <p className="mt-2 text-hoja-100">Encuentre productos del campo Colombiano directamente de quien los cultiva.</p>
           <ul className="mt-6 hidden space-y-3 text-sm text-hoja-100/90 md:block">
             <li className="flex gap-2"><span aria-hidden="true">🧺</span> Compre directo al productor.</li>
             <li className="flex gap-2"><span aria-hidden="true">🤝</span> Menos intermediarios, mejor precio para el campo.</li>
