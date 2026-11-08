@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --color-hoja-50: #f1f7ee;
+  --color-hoja-100: #dcebd3;
+  --color-hoja-300: #8fc07d;
+  --color-hoja-500: #4a8a3c;
+  --color-hoja-600: #3a7330;
+  --color-hoja-700: #2f5c28;
+  --color-hoja-900: #1c3a1a;
+  --color-luna: #f2b632;
+  --color-luna-oscuro: #b57f06;
+  --color-tierra: #7a5a34;
+  --color-crema: #faf6ec;
+}
+
+body {
+  background: var(--color-crema);
+  color: #1f2a1c;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Clases reutilizables de formulario */
+@layer components {
+  .campo {
+    @apply w-full rounded-lg border border-hoja-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-hoja-600 focus:ring-2 focus:ring-hoja-300 read-only:bg-hoja-50 read-only:text-gray-500 disabled:bg-hoja-50 disabled:text-gray-500;
+  }
+  .btn-primario {
+    @apply inline-block rounded-lg px-4 py-2 text-center text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 bg-hoja-600 text-white hover:bg-hoja-700;
+  }
+  .btn-luna {
+    @apply inline-block rounded-lg px-4 py-2 text-center text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 bg-luna text-hoja-900 hover:brightness-95;
+  }
+  .btn-peligro {
+    @apply inline-block rounded-lg px-4 py-2 text-center text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 bg-red-600 text-white hover:bg-red-700;
+  }
+  .btn-suave {
+    @apply inline-block rounded-lg px-4 py-2 text-center text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 border border-hoja-300 bg-white text-hoja-900 hover:bg-hoja-50;
+  }
+}
