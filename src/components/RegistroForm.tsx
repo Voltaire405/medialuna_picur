@@ -8,11 +8,26 @@ import { Mensaje } from "./Mensaje";
 
 type Opcion = { value: string; label: string };
 
+// Ícono por perfil; el texto viene de la BD, así que se busca por palabra clave.
+const icono = (label: string) => (/compra/i.test(label) ? "🧺" : /produc/i.test(label) ? "🌱" : "🌾");
+
+function Seccion({ icono, titulo, children }: { icono: string; titulo: string; children: React.ReactNode }) {
+  return (
+    <fieldset className="space-y-4">
+      <legend className="mb-3 flex w-full items-center gap-2 border-b border-hoja-100 pb-2 text-sm font-semibold tracking-wide text-hoja-700 uppercase">
+        <span aria-hidden="true" className="grid h-7 w-7 place-items-center rounded-full bg-hoja-100 text-base">{icono}</span>
+        {titulo}
+      </legend>
+      {children}
+    </fieldset>
+  );
+}
+
 export function RegistroForm({ perfiles }: { perfiles: Opcion[] }) {
   const [r, accion, pendiente] = useActionState(registrar, null);
   const f = (name: string, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <div>
-      <label htmlFor={name} className="mb-1 block text-sm font-medium">
+      <label htmlFor={name} className="etiqueta">
         {label}
         {props.required && <span className="text-red-600"> *</span>}
       </label>
@@ -21,41 +36,59 @@ export function RegistroForm({ perfiles }: { perfiles: Opcion[] }) {
   );
 
   return (
-    <form onSubmit={enviar(accion)} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        {f("idpersona", "Identificación", { required: true, inputMode: "numeric", maxLength: 15 })}
-        {f("movil", "Móvil", { required: true, inputMode: "tel", maxLength: 10 })}
-        {f("nom1", "Primer nombre", { required: true })}
-        {f("nom2", "Segundo nombre")}
-        {f("apell1", "Primer apellido", { required: true })}
-        {f("apell2", "Segundo apellido")}
-        {f("correo", "Correo electrónico", { required: true, type: "email" })}
-        {f("tele", "Teléfono", { inputMode: "tel", maxLength: 10 })}
-        {f("direccion", "Dirección (vereda / municipio)")}
-        {f("fecha_nac", "Fecha de nacimiento", { type: "date" })}
-      </div>
-      <fieldset className="grid gap-4 rounded-xl bg-hoja-50 p-4 sm:grid-cols-3">
-        <legend className="px-1 text-sm font-semibold text-hoja-900">Datos de acceso</legend>
-        {f("nombreu", "Usuario", { required: true, autoComplete: "username" })}
-        {f("contrasena", "Contraseña (mín. 8)", { required: true, type: "password", autoComplete: "new-password" })}
+    <form onSubmit={enviar(accion)} className="space-y-8">
+      <Seccion icono="🧑‍🌾" titulo="¿Quién es usted?">
         <div>
-          <label htmlFor="idperfil" className="mb-1 block text-sm font-medium">Soy <span className="text-red-600">*</span></label>
-          <select id="idperfil" name="idperfil" required className="campo" defaultValue="">
-            <option value="" disabled>Seleccione…</option>
+          <span className="etiqueta">Me registro como <span className="text-red-600">*</span></span>
+          <div className="grid gap-3 sm:grid-cols-2">
             {perfiles.map((p) => (
-              <option key={p.value} value={p.value}>{p.label}</option>
+              <label
+                key={p.value}
+                className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-hoja-100 bg-white p-3 transition hover:border-hoja-300 has-[:checked]:border-hoja-500 has-[:checked]:bg-hoja-50 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-hoja-300/40"
+              >
+                <input type="radio" name="idperfil" value={p.value} required className="sr-only" />
+                <span aria-hidden="true" className="text-2xl">{icono(p.label)}</span>
+                <span className="font-semibold text-hoja-900">{p.label}</span>
+              </label>
             ))}
-          </select>
+          </div>
         </div>
-      </fieldset>
-      <label className="flex items-start gap-2 text-sm">
-        <input type="checkbox" name="autoriza" className="mt-1" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          {f("idpersona", "Identificación", { required: true, inputMode: "numeric", maxLength: 15 })}
+          {f("fecha_nac", "Fecha de nacimiento", { type: "date" })}
+          {f("nom1", "Primer nombre", { required: true })}
+          {f("nom2", "Segundo nombre")}
+          {f("apell1", "Primer apellido", { required: true })}
+          {f("apell2", "Segundo apellido")}
+        </div>
+      </Seccion>
+
+      <Seccion icono="📍" titulo="¿Dónde lo encontramos?">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {f("movil", "Móvil", { required: true, inputMode: "tel", maxLength: 10, placeholder: "3001234567" })}
+          {f("tele", "Teléfono", { inputMode: "tel", maxLength: 10 })}
+          {f("correo", "Correo electrónico", { required: true, type: "email", placeholder: "nombre@correo.com" })}
+          {f("direccion", "Dirección (vereda / municipio)", { placeholder: "Vereda La Esperanza, Marinilla" })}
+        </div>
+      </Seccion>
+
+      <Seccion icono="🔑" titulo="Datos de acceso">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {f("nombreu", "Usuario", { required: true, autoComplete: "username" })}
+          {f("contrasena", "Contraseña (mín. 8)", { required: true, type: "password", autoComplete: "new-password", minLength: 8 })}
+        </div>
+      </Seccion>
+
+      <label className="flex items-start gap-3 rounded-xl bg-luna/10 p-4 text-sm text-hoja-900">
+        <input type="checkbox" name="autoriza" className="mt-0.5 h-4 w-4 accent-hoja-600" />
         <span>Autorizo el tratamiento de mis datos personales conforme a la Ley 1581 de 2012.</span>
       </label>
+
       <Mensaje r={r} />
-      <div className="flex flex-wrap items-center gap-3">
-        <button className="btn-primario" disabled={pendiente}>{pendiente ? "Registrando…" : "Registrarse"}</button>
+
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Link href="/login" className="btn-suave">{r?.ok ? "Ir a ingresar" : "Volver"}</Link>
+        <button className="btn-primario sm:min-w-48" disabled={pendiente}>{pendiente ? "Registrando…" : "Crear mi cuenta"}</button>
       </div>
     </form>
   );

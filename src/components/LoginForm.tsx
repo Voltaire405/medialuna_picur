@@ -20,11 +20,11 @@ export function LoginForm() {
       {!recuperando ? (
         <form onSubmit={enviar(accionLogin)} className="space-y-4">
           <div>
-            <label htmlFor="nombreu" className="mb-1 block text-sm font-medium">Usuario</label>
+            <label htmlFor="nombreu" className="etiqueta">Usuario</label>
             <input id="nombreu" name="nombreu" autoComplete="username" className="campo" />
           </div>
           <div>
-            <label htmlFor="contrasena" className="mb-1 block text-sm font-medium">Contraseña</label>
+            <label htmlFor="contrasena" className="etiqueta">Contraseña</label>
             <input id="contrasena" name="contrasena" type="password" autoComplete="current-password" className="campo" />
           </div>
           <Mensaje r={rLogin} />
@@ -40,7 +40,7 @@ export function LoginForm() {
       ) : (
         <form onSubmit={enviar(accionRec)} className="space-y-4">
           <div>
-            <label htmlFor="identificador" className="mb-1 block text-sm font-medium">Identificación o correo electrónico</label>
+            <label htmlFor="identificador" className="etiqueta">Identificación o correo electrónico</label>
             <input id="identificador" name="identificador" className="campo" />
           </div>
           <Mensaje r={rRec} />

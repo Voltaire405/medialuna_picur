@@ -15,26 +15,39 @@
 }
 
 body {
-  background: var(--color-crema);
+  /* Crema con un leve resplandor de sol y de hoja en las esquinas */
+  background:
+    radial-gradient(60rem 30rem at 100% 0%, rgb(242 182 50 / 0.12), transparent 60%),
+    radial-gradient(50rem 30rem at 0% 100%, rgb(74 138 60 / 0.1), transparent 60%),
+    var(--color-crema);
+  background-attachment: fixed;
   color: #1f2a1c;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Base común de los botones (utility para poder usarla con @apply) */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-center text-sm font-semibold transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-luna/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100;
+}
+
 /* Clases reutilizables de formulario */
 @layer components {
+  .etiqueta {
+    @apply mb-1.5 block text-sm font-medium text-hoja-900;
+  }
   .campo {
-    @apply w-full rounded-lg border border-hoja-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-hoja-600 focus:ring-2 focus:ring-hoja-300 read-only:bg-hoja-50 read-only:text-gray-500 disabled:bg-hoja-50 disabled:text-gray-500;
+    @apply w-full rounded-xl border border-hoja-100 bg-hoja-50/40 px-3.5 py-2.5 text-sm shadow-sm outline-none transition placeholder:text-gray-400 hover:border-hoja-300 focus:border-hoja-500 focus:bg-white focus:ring-4 focus:ring-hoja-300/40 user-invalid:border-red-400 user-invalid:ring-red-200 read-only:bg-hoja-50 read-only:text-gray-500 read-only:shadow-none disabled:bg-hoja-50 disabled:text-gray-500;
   }
   .btn-primario {
-    @apply inline-block rounded-lg px-4 py-2 text-center text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 bg-hoja-600 text-white hover:bg-hoja-700;
+    @apply btn bg-gradient-to-b from-hoja-500 to-hoja-600 text-white shadow-md shadow-hoja-700/20 hover:from-hoja-600 hover:to-hoja-700;
   }
   .btn-luna {
-    @apply inline-block rounded-lg px-4 py-2 text-center text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 bg-luna text-hoja-900 hover:brightness-95;
+    @apply btn bg-luna text-hoja-900 shadow-md shadow-luna-oscuro/20 hover:brightness-95;
   }
   .btn-peligro {
-    @apply inline-block rounded-lg px-4 py-2 text-center text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 bg-red-600 text-white hover:bg-red-700;
+    @apply btn bg-red-600 text-white shadow-md shadow-red-700/20 hover:bg-red-700;
   }
   .btn-suave {
-    @apply inline-block rounded-lg px-4 py-2 text-center text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 border border-hoja-300 bg-white text-hoja-900 hover:bg-hoja-50;
+    @apply btn border border-hoja-100 bg-white text-hoja-900 hover:border-hoja-300 hover:bg-hoja-50;
   }
 }

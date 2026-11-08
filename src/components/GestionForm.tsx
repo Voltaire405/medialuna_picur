@@ -100,7 +100,7 @@ export function GestionForm(p: Props) {
               const requerido = c.requerido === true || (c.requerido === "creacion" && !editando);
               return (
                 <div key={c.name}>
-                  <label htmlFor={id} className="mb-1 block text-sm font-medium">
+                  <label htmlFor={id} className="etiqueta">
                     {c.label}
                     {requerido && <span className="text-red-600"> *</span>}
                   </label>
@@ -141,7 +141,7 @@ export function GestionForm(p: Props) {
               );
             })}
           <div>
-            <span className="mb-1 block text-sm font-medium">Estado</span>
+            <span className="etiqueta">Estado</span>
             <span
               className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ${activo ? "bg-hoja-100 text-hoja-700" : "bg-red-100 text-red-700"}`}
             >
@@ -182,7 +182,7 @@ export function GestionForm(p: Props) {
       {p.permisos.consultar && (
         <div className="flex flex-wrap items-end gap-2 rounded-2xl bg-white p-4 shadow">
           <div className="min-w-48 flex-1">
-            <label htmlFor="buscar" className="mb-1 block text-sm font-medium">Buscar por {p.buscarPor}</label>
+            <label htmlFor="buscar" className="etiqueta">Buscar por {p.buscarPor}</label>
             <input id="buscar" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className="campo" />
           </div>
           <button
