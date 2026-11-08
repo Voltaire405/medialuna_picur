@@ -63,6 +63,8 @@ export function GestionForm(p: Props) {
   // La fila vigente viene del servidor (se refresca tras cada acción).
   const actual = p.filas.find((f) => String(f[p.idCampo]) === selId);
   const activo = !actual || activa(actual);
+  // Registro del sistema (p. ej. perfiles base): solo lectura. El servidor lo valida igual.
+  const protegido = actual?.protegido === 1;
   const original = actual ? aValores(p.campos, actual) : null;
   const hayCambios = !original || p.campos.some((c) => valores[c.name] !== original[c.name]);
   const nombre = (f: Fila) => p.columnas.map((c) => f[c.name]).filter(Boolean).slice(0, 2).join(" · ");
@@ -165,7 +167,7 @@ export function GestionForm(p: Props) {
             {p.campos
               .filter((c) => !(c.soloEdicion && !editando))
               .map((c) => {
-                const bloq = c.bloqueado === "siempre" || (c.bloqueado === "edicion" && editando);
+                const bloq = protegido || c.bloqueado === "siempre" || (c.bloqueado === "edicion" && editando);
                 const id = `f-${c.name}`;
                 const requerido = c.requerido === true || (c.requerido === "creacion" && !editando);
                 return (
@@ -223,7 +225,7 @@ export function GestionForm(p: Props) {
                     {pendiente ? "Guardando…" : "Guardar"}
                   </button>
                 )}
-                {editando && p.permisos.modificar && (
+                {editando && p.permisos.modificar && !protegido && (
                   <button type="submit" className="btn-primario" disabled={pendiente || !hayCambios}>
                     {pendiente ? "Guardando…" : "Modificar"}
                   </button>
@@ -231,11 +233,17 @@ export function GestionForm(p: Props) {
                 {editando && p.permisos.crear && (
                   <button type="button" className="btn-suave" onClick={nuevo} disabled={pendiente}>Cancelar</button>
                 )}
-                {editando && !hayCambios && <span className="text-xs text-gray-500">Sin cambios por guardar</span>}
+                {protegido ? (
+                  <span className="text-xs text-gray-500">
+                    <span aria-hidden="true">🔒</span> Registro del sistema: no se puede modificar ni inhabilitar
+                  </span>
+                ) : (
+                  editando && !hayCambios && <span className="text-xs text-gray-500">Sin cambios por guardar</span>
+                )}
               </div>
 
               {/* Zona de riesgo, separada y con confirmación. */}
-              {editando && p.permisos.inhabilitar && actual && (
+              {editando && p.permisos.inhabilitar && actual && !protegido && (
                 <div className="flex flex-wrap items-center gap-2">
                   {!activo ? (
                     <button

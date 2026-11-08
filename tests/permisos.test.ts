@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { puede } from "@/lib/permisos";
+import { esPerfilSistema, puede } from "@/lib/permisos";
 import { personaSchema } from "@/lib/validators";
 
 describe("matriz de permisos", () => {
@@ -14,6 +14,13 @@ describe("matriz de permisos", () => {
     expect(puede(false, "persona", "crear")).toBe(false);
     expect(puede(false, "perfil", "consultar")).toBe(false);
     expect(puede(false, "usuario", "crear")).toBe(false);
+  });
+});
+
+describe("perfiles del sistema", () => {
+  it("Administrador, Productor y Comprador están protegidos; un perfil nuevo no", () => {
+    expect([1, 2, 3].every(esPerfilSistema)).toBe(true);
+    expect(esPerfilSistema(4)).toBe(false);
   });
 });
 

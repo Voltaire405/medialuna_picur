@@ -5,7 +5,7 @@ import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { perfil } from "@/db/schema";
 import { correr, ErrorNegocio, type Resultado } from "@/lib/errores";
-import { ADMIN_PERFIL } from "@/lib/permisos";
+import { esPerfilSistema, filaPerfil } from "@/lib/permisos";
 import { exigir } from "@/lib/session";
 import { perfilSchema, plano } from "@/lib/validators";
 
@@ -20,7 +20,7 @@ export async function guardarPerfil(modo: "crear" | "modificar", fd: FormData): 
       if ((await db.select().from(perfil).where(repetido)).length) throw new ErrorNegocio("Ya existe un perfil con esa descripción");
       await db.insert(perfil).values({ descripc });
     } else {
-      if (id === ADMIN_PERFIL) throw new ErrorNegocio("El perfil Administrador no se puede modificar");
+      if (esPerfilSistema(id)) throw new ErrorNegocio("Los perfiles del sistema (Administrador, Productor, Comprador) no se pueden modificar");
       if ((await db.select().from(perfil).where(and(repetido, ne(perfil.idperfil, id)))).length)
         throw new ErrorNegocio("Ya existe un perfil con esa descripción");
       const r = await db.update(perfil).set({ descripc }).where(eq(perfil.idperfil, id)).returning();
@@ -34,7 +34,8 @@ export async function guardarPerfil(modo: "crear" | "modificar", fd: FormData): 
 export async function inhabilitarPerfil(id: string, estado: 0 | 1): Promise<Resultado> {
   return correr(async () => {
     await exigir("perfil", "inhabilitar");
-    if (Number(id) === ADMIN_PERFIL) throw new ErrorNegocio("El perfil Administrador no se puede inhabilitar");
+    if (esPerfilSistema(Number(id)))
+      throw new ErrorNegocio("Los perfiles del sistema (Administrador, Productor, Comprador) no se pueden inhabilitar");
     const r = await db.update(perfil).set({ estado }).where(eq(perfil.idperfil, Number(id))).returning();
     if (!r.length) throw new ErrorNegocio("El perfil no existe");
     revalidatePath("/perfil");
@@ -49,6 +50,6 @@ export async function consultarPerfil(q: string): Promise<Resultado> {
     if (!Number.isInteger(id) || id < 1) throw new ErrorNegocio("Ingrese un ID de perfil numérico");
     const [fila] = await db.select().from(perfil).where(eq(perfil.idperfil, id));
     if (!fila) throw new ErrorNegocio("No se encontró un perfil con ese ID");
-    return { mensaje: "Perfil encontrado", fila };
+    return { mensaje: "Perfil encontrado", fila: filaPerfil(fila) };
   });
 }
