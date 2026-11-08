@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/LoginForm";
 import { Logo } from "@/components/Logo";
@@ -7,6 +8,9 @@ export default async function LoginPage() {
   if (await getUsuario()) redirect("/");
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-hoja-900 via-hoja-700 to-hoja-500 p-4">
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-1/2 [mask-image:linear-gradient(to_right,black_45%,transparent)]">
+        <Image src="/images/login-bg.jpg" alt="" fill sizes="50vw" className="object-cover opacity-40 blur-[1px]" />
+      </div>
       <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-luna/90" />
       <div className="pointer-events-none absolute -right-8 -top-32 h-96 w-96 rounded-full bg-hoja-900" />
       <div className="relative grid w-full max-w-4xl items-center gap-8 md:grid-cols-2">
