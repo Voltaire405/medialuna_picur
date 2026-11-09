@@ -14,9 +14,9 @@ export const alcanceDe = (id: number) =>
   id === ADMIN_PERFIL
     ? "Todas las gestiones"
     : id === PRODUCTOR_PERFIL
-      ? "Sin gestiones · lo crea el administrador · verifica su correo"
+      ? "Sin gestiones · comprará y publicará · lo crea el administrador · verifica su correo"
       : id === COMPRADOR_PERFIL
-        ? "Sin gestiones · se registra solo"
+        ? "Sin gestiones · comprará · se registra solo"
         : "Sin gestiones";
 
 // Fila para Gestión Perfil: alcance visible y marca de protegido (el formulario oculta Modificar/Inhabilitar).

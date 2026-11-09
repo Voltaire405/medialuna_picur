@@ -169,6 +169,8 @@ Guardar es el envío de Crear/Modificar y Salir es navegación: no son permisos 
 - **Enlace** `/verificar?token=…`: token aleatorio guardado como hash en `verificacion`, vence en 24 h, un solo uso y atado al correo vigente (cambiar el correo invalida el enlace y desmarca la verificación). Se confirma con un botón (POST) que además registra la autorización Ley 1581 si faltaba.
 - **Mi contraseña** (`/contrasena`): cualquier usuario cambia su contraseña; se cierran las demás sesiones y la actual sigue viva.
 
+**Comprar y publicar (catálogo y pedidos, etapas posteriores).** Cada usuario tiene un solo perfil y el Productor incluye al Comprador: el Comprador solo compra; el Productor compra y publica. Así una persona puede hacer ambas cosas con un único usuario, sin tabla `usuario_perfil`: «publicar sin comprar» no tiene sentido en el mercado, así que el muchos-a-muchos solo añadiría combinaciones inútiles y se apartaría del modelo del parcial. Un comprador que quiera vender lo pasa a Productor el administrador en Gestión Usuario, y desde ese momento debe verificar su correo para ingresar. El Administrador es un perfil de gestión: no compra ni publica. Las capacidades se validarán en servidor con una función `tiene(idperfil, "comprar" | "publicar")` en `lib/permisos.ts`, que se agregará junto con esas gestiones.
+
 ## Despliegue y configuración
 
 Variables en `.env.example`. Local: `file:local.db` (mismo driver libsql); producción: `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`. Migraciones versionadas en `drizzle/` (`pnpm db:migrate`), datos mínimos con `pnpm db:seed`.
