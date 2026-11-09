@@ -165,7 +165,7 @@ Guardar es el envío de Crear/Modificar y Salir es navegación: no son permisos 
 | Productor (`idperfil = 2`) | Solo el administrador (Gestión Persona + Gestión Usuario) | Obligatoria: con la contraseña correcta, el ingreso se bloquea y se reenvía el enlace. El administrador puede marcarla como hecha en Gestión Usuario («Correo verificado») |
 | Administrador (`idperfil = 1`) | Seed | No aplica |
 
-- **Correo confiable** (`lib/verificacion.ts`): se rechazan dominios desechables (lista corta) y dominios sin registro MX o con "null MX". Si el DNS falla por red, se deja pasar.
+- **Correo confiable** (`lib/verificacion.ts`): se rechazan dominios desechables (lista corta; solo con `DEVELOPMENT_STAGE=FALSE`, por defecto `TRUE` los acepta para pruebas) y dominios sin registro MX o con "null MX". Si el DNS falla por red, se deja pasar.
 - **Enlace** `/verificar?token=…`: token aleatorio guardado como hash en `verificacion`, vence en 24 h, un solo uso y atado al correo vigente (cambiar el correo invalida el enlace y desmarca la verificación). Se confirma con un botón (POST) que además registra la autorización Ley 1581 si faltaba.
 - **Mi contraseña** (`/contrasena`): cualquier usuario cambia su contraseña; se cierran las demás sesiones y la actual sigue viva.
 

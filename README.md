@@ -17,11 +17,12 @@ pnpm dev                 # http://localhost:3000
 
 - Sin `TURSO_DATABASE_URL` usa `file:local.db`. Para Turso: `turso db create`, `turso db tokens create` y completar `.env`.
 - Correo de recuperación: `RESEND_API_KEY` (y `MAIL_FROM`). Sin dominio verificado, Resend solo entrega al correo de la cuenta propietaria. Sin clave, el correo se imprime en consola.
+- `DEVELOPMENT_STAGE` (por defecto `TRUE`): acepta correos desechables como los de yopmail para pruebas. En producción póngala en `FALSE` para rechazarlos.
 - Administrador sembrado: `SEED_ADMIN_USER` / `SEED_ADMIN_PASSWORD` (por defecto `admin` / `Admin12345`; cámbielos y ponga su correo real en `SEED_ADMIN_EMAIL`).
 
 ## Despliegue en Vercel
 
-- Variables en Vercel: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (la URL pública), `RESEND_API_KEY`, `MAIL_FROM` y `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` (opcionales `SEED_ADMIN_USER`, `SEED_ADMIN_ID`).
+- Variables en Vercel: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (la URL pública), `RESEND_API_KEY`, `MAIL_FROM`, `DEVELOPMENT_STAGE=FALSE` y `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` (opcionales `SEED_ADMIN_USER`, `SEED_ADMIN_ID`).
 - Vercel ejecuta `pnpm vercel-build`: aplica las migraciones de `drizzle/` en Turso, siembra perfiles y administrador (idempotente: si el administrador ya existe no cambia su contraseña) y luego `next build`.
 - El build falla si falta `TURSO_DATABASE_URL`, o si `SEED_ADMIN_PASSWORD`/`SEED_ADMIN_EMAIL` faltan o son los de ejemplo.
 - Las *preview deployments* usan las variables de su entorno: si apuntan a la misma base de producción, también la migran.

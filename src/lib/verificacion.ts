@@ -17,12 +17,14 @@ const DESECHABLES = new Set([
 ]);
 
 // Correo confiable: dominio no desechable y que recibe correo (registro MX).
+// Los desechables solo se rechazan con DEVELOPMENT_STAGE=FALSE (por defecto TRUE, para poder probar con yopmail).
 // Ante fallas de red del DNS deja pasar: no se bloquea el registro por un problema propio.
 export async function exigirCorreoConfiable(correo: string) {
   const dominio = correo.split("@")[1]?.toLowerCase() ?? "";
   // También sus subdominios (p. ej. x.mailinator.com).
   const partes = dominio.split(".");
-  if (partes.some((_, i) => DESECHABLES.has(partes.slice(i).join(".")))) throw new ErrorNegocio("No se aceptan correos temporales o desechables");
+  const rechazaDesechables = process.env.DEVELOPMENT_STAGE?.trim().toUpperCase() === "FALSE";
+  if (rechazaDesechables && partes.some((_, i) => DESECHABLES.has(partes.slice(i).join(".")))) throw new ErrorNegocio("No se aceptan correos temporales o desechables");
   let mx;
   try {
     mx = await resolveMx(dominio);

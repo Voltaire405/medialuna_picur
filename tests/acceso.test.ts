@@ -21,6 +21,7 @@ const cargar = async () => ({
   ...(await import("@/lib/acceso")),
   ...(await import("@/lib/usuarios")),
   ...(await import("@/lib/personas")),
+  ...(await import("@/lib/verificacion")),
   auth: (await import("@/lib/auth")).auth,
   acciones: await import("@/actions/auth"),
 });
@@ -136,7 +137,16 @@ describe("registro público", () => {
     ["luis@mail", /no es válido/],
     ["luis@sinmx.co", /no recibe/],
   ])("rechaza correo no confiable %s", async (correo, msg) => {
-    expect((await m.acciones.registrar(null, fd({ ...base, correo }))).mensaje).toMatch(msg);
+    vi.stubEnv("DEVELOPMENT_STAGE", "FALSE");
+    try {
+      expect((await m.acciones.registrar(null, fd({ ...base, correo }))).mensaje).toMatch(msg);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+  it("sin DEVELOPMENT_STAGE (o en TRUE) no rechaza desechables", async () => {
+    delete process.env.DEVELOPMENT_STAGE;
+    await expect(m.exigirCorreoConfiable("luis@yopmail.com")).resolves.toBeUndefined();
   });
   it("crea persona + usuario Comprador (ignora el perfil enviado), guarda la autorización y no deja persona huérfana", async () => {
     const mal = await m.acciones.registrar(null, fd({ ...base, nombreu: "ana" })); // usuario ya en uso
