@@ -12,13 +12,12 @@ import { exigirCorreoConfiable } from "@/lib/verificacion";
 
 export async function guardarPersona(modo: "crear" | "modificar", fd: FormData): Promise<Resultado> {
   return correr(async () => {
-    const u = await exigir("persona", modo);
+    await exigir("persona", modo);
     const p = personaSchema.parse(plano(fd));
     if (modo === "crear") {
       await exigirCorreoConfiable(p.correo);
       await crearPersona(p);
     } else {
-      if (!u.esAdmin && p.idpersona !== u.idpersona) throw new ErrorNegocio("Solo puede modificar sus propios datos");
       const [actual] = await db.select().from(persona).where(eq(persona.idpersona, p.idpersona));
       if (!actual) throw new ErrorNegocio("La persona no existe");
       const cambiaCorreo = actual.correo !== p.correo;
@@ -55,10 +54,9 @@ export async function inhabilitarPersona(id: string, estado: 0 | 1): Promise<Res
 
 export async function consultarPersona(q: string): Promise<Resultado> {
   return correr(async () => {
-    const u = await exigir("persona", "consultar");
+    await exigir("persona", "consultar");
     const id = q.trim();
     if (!id) throw new ErrorNegocio("Ingrese la identificación a consultar");
-    if (!u.esAdmin && id !== u.idpersona) throw new ErrorNegocio("Solo puede consultar sus propios datos");
     const [fila] = await db.select().from(persona).where(eq(persona.idpersona, id));
     if (!fila) throw new ErrorNegocio("No se encontró una persona con esa identificación");
     return { mensaje: "Persona encontrada", fila: filaPersona(fila) };

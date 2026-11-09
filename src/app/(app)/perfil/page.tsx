@@ -15,7 +15,7 @@ export default async function PerfilPage() {
       buscarPor="ID de perfil"
       campos={[
         { name: "idperfil", label: "ID Perfil", bloqueado: "siempre", soloEdicion: true, ayuda: "Se asigna automáticamente" },
-        { name: "descripc", label: "Descripción", requerido: true, maxLength: 40, ayuda: "Ej.: Asociación, Técnico. Un perfil nuevo puede consultar y modificar sus propios datos" },
+        { name: "descripc", label: "Descripción", requerido: true, maxLength: 40, ayuda: "Ej.: Asociación, Técnico. Un perfil nuevo no tiene acceso a las gestiones (solo el administrador)" },
       ]}
       columnas={[
         { name: "idperfil", label: "ID" },

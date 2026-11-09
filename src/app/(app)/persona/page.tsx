@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import { GestionForm, type Campo } from "@/components/GestionForm";
 import { consultarPersona, guardarPersona, inhabilitarPersona } from "@/actions/persona";
 import { db } from "@/db";
@@ -23,10 +22,7 @@ const campos: Campo[] = [
 
 export default async function PersonaPage() {
   const u = await exigirPagina("persona");
-  // Perfiles no administradores solo ven y editan su propia persona.
-  const filas = (
-    await db.select().from(persona).where(u.esAdmin ? undefined : eq(persona.idpersona, u.idpersona)).orderBy(persona.idpersona)
-  ).map(filaPersona);
+  const filas = (await db.select().from(persona).orderBy(persona.idpersona)).map(filaPersona);
   return (
     <GestionForm
       titulo="Persona"
@@ -40,7 +36,6 @@ export default async function PersonaPage() {
         { name: "correo", label: "Correo" },
       ]}
       filas={filas}
-      inicial={u.esAdmin ? undefined : filas[0]}
       permisos={permisosDe(u.esAdmin, "persona")}
       acciones={{ guardar: guardarPersona, inhabilitar: inhabilitarPersona, consultar: consultarPersona }}
     />

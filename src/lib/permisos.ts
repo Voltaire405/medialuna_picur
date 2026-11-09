@@ -1,6 +1,5 @@
-// Matriz de permisos del parcial: Administrador hace todo. Cualquier otro perfil solo consulta
-// y modifica su propia Persona. El "Crear persona" del actor Persona es el autorregistro
-// (/registro, sin sesión): con sesión nadie salvo el administrador da de alta personas.
+// Permisos: las tres gestiones (Perfil, Usuario y Persona) son exclusivas del Administrador.
+// El autorregistro de compradores es /registro, sin sesión.
 // Ids sembrados en src/db/seed.ts.
 export const ADMIN_PERFIL = 1;
 export const PRODUCTOR_PERFIL = 2; // lo da de alta el administrador; debe verificar su correo
@@ -15,10 +14,10 @@ export const alcanceDe = (id: number) =>
   id === ADMIN_PERFIL
     ? "Todas las gestiones"
     : id === PRODUCTOR_PERFIL
-      ? "Sus datos · lo crea el administrador · verifica su correo"
+      ? "Sin gestiones · lo crea el administrador · verifica su correo"
       : id === COMPRADOR_PERFIL
-        ? "Sus datos · se registra solo"
-        : "Sus datos (consultar y modificar)";
+        ? "Sin gestiones · se registra solo"
+        : "Sin gestiones";
 
 // Fila para Gestión Perfil: alcance visible y marca de protegido (el formulario oculta Modificar/Inhabilitar).
 export const filaPerfil = (p: { idperfil: number; descripc: string; estado: number }) => ({
@@ -30,13 +29,9 @@ export const filaPerfil = (p: { idperfil: number; descripc: string; estado: numb
 export type Gestion = "perfil" | "usuario" | "persona";
 export type Accion = "crear" | "consultar" | "modificar" | "inhabilitar";
 
-const PERSONA: Partial<Record<Gestion, Accion[]>> = {
-  persona: ["consultar", "modificar"],
-};
-
-export function puede(esAdmin: boolean, gestion: Gestion, accion: Accion): boolean {
-  return esAdmin || (PERSONA[gestion]?.includes(accion) ?? false);
-}
+// Hoy todo es exclusivo del administrador; se conservan gestion/accion como punto de extensión de la matriz.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const puede = (esAdmin: boolean, _gestion: Gestion, _accion: Accion): boolean => esAdmin;
 
 // Los 4 botones de una gestión, derivados de la misma matriz que valida el servidor.
 export const permisosDe = (esAdmin: boolean, gestion: Gestion) => ({

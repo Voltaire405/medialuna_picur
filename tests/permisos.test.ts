@@ -8,12 +8,10 @@ describe("matriz de permisos", () => {
       for (const a of ["crear", "consultar", "modificar", "inhabilitar"] as const)
         expect(puede(true, g, a)).toBe(true);
   });
-  it("persona solo consulta y modifica su Persona; crear es el autorregistro, no con sesión", () => {
-    expect(puede(false, "persona", "modificar")).toBe(true);
-    expect(puede(false, "persona", "inhabilitar")).toBe(false);
-    expect(puede(false, "persona", "crear")).toBe(false);
-    expect(puede(false, "perfil", "consultar")).toBe(false);
-    expect(puede(false, "usuario", "crear")).toBe(false);
+  it("los perfiles no administradores no gestionan nada, tampoco Persona", () => {
+    for (const g of ["perfil", "usuario", "persona"] as const)
+      for (const a of ["crear", "consultar", "modificar", "inhabilitar"] as const)
+        expect(puede(false, g, a)).toBe(false);
   });
 });
 

@@ -149,13 +149,11 @@ Se aplican **en servidor** (`exigir` en cada action, `exigirPagina` en cada pág
 |---|:-:|:-:|:-:|:-:|
 | Perfil | Admin | Admin | Admin | Admin |
 | Usuario | Admin | Admin | Admin | Admin |
-| Persona | Admin** | Todos* | Todos* | Admin |
+| Persona | Admin** | Admin | Admin | Admin |
 
 Guardar es el envío de Crear/Modificar y Salir es navegación: no son permisos propios.
 
-\* Un perfil no administrador solo ve y modifica **su propia** persona.
-
-**Perfiles del sistema.** Administrador (1), Productor (2) y Comprador (3) se siembran y el código depende de su id (`lib/permisos.ts`), así que no se pueden modificar ni inhabilitar: renombrarlos cambiaría su significado sin cambiar sus reglas, inhabilitar Comprador rompería el registro e inhabilitar Productor dejaría fuera a todos los productores. El CRUD completo aplica a los perfiles nuevos, que reciben los permisos de persona (consultar y modificar sus propios datos); Gestión Perfil muestra el alcance de cada uno.
+**Perfiles del sistema.** Administrador (1), Productor (2) y Comprador (3) se siembran y el código depende de su id (`lib/permisos.ts`), así que no se pueden modificar ni inhabilitar: renombrarlos cambiaría su significado sin cambiar sus reglas, inhabilitar Comprador rompería el registro e inhabilitar Productor dejaría fuera a todos los productores. El CRUD completo aplica a los perfiles nuevos, que tampoco tienen acceso a ninguna gestión (todo es exclusivo del administrador); Gestión Perfil muestra el alcance de cada uno.
 
 \*\* El "Crear persona" del actor Persona en la tabla del parcial es el **autorregistro** (botón Registrarse → `/registro`, sin sesión), no dar de alta a terceros con sesión.
 

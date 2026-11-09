@@ -34,7 +34,6 @@ type Props = {
     inhabilitar: (id: string, estado: 0 | 1) => Promise<Resultado>;
     consultar: (q: string) => Promise<Resultado>;
   };
-  inicial?: Fila; // fila preseleccionada (p. ej. la propia persona)
 };
 
 const activa = (f: Fila) => f.estado === 1;
@@ -56,8 +55,8 @@ function Estado({ activo }: { activo: boolean }) {
 export function GestionForm(p: Props) {
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
-  const [selId, setSelId] = useState<string | null>(p.inicial ? String(p.inicial[p.idCampo]) : null);
-  const [valores, setValores] = useState<Record<string, string>>(p.inicial ? aValores(p.campos, p.inicial) : vacio(p.campos));
+  const [selId, setSelId] = useState<string | null>(null);
+  const [valores, setValores] = useState<Record<string, string>>(vacio(p.campos));
   const [busqueda, setBusqueda] = useState("");
   const [msg, setMsg] = useState<Resultado | null>(null);
   const [confirmando, setConfirmando] = useState(false);
