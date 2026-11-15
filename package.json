@@ -13,6 +13,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:setup": "pnpm db:migrate && pnpm db:seed",
     "db:demo": "tsx src/db/seed-demo.ts",
+    "db:ver": "tsx src/db/ver.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
