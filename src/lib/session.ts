@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { user } from "@/db/schema";
@@ -12,7 +12,10 @@ import { exigeVerificacion } from "./verificacion";
 // Usuario autenticado y vigente. Se relee de la BD en cada petición: si el
 // usuario, su perfil o su persona fueron inhabilitados, deja de tener acceso.
 export const getUsuario = cache(async () => {
-  const s = await auth.api.getSession({ headers: await headers() });
+  // Se lee de cookies() y no de headers(): cuando una action rota la sesión (cambio de contraseña),
+  // el render que sigue en la misma petición solo ve la cookie nueva por aquí; con headers() vería
+  // la revocada y expulsaría al usuario a /login.
+  const s = await auth.api.getSession({ headers: new Headers({ cookie: (await cookies()).toString() }) });
   if (!s) return null;
   const u = await buscarUsuario(eq(user.id, s.user.id));
   // Un productor sin correo verificado pierde también las sesiones abiertas (p. ej. si cambió su correo).
