@@ -47,16 +47,16 @@ export async function validarAltaUsuario(nombreu: string, idperfil: number) {
     db.select().from(perfil).where(eq(perfil.idperfil, idperfil)),
     db.select().from(user).where(eq(user.username, nombreu)),
   ]);
-  if (!pf || !pf.estado) throw new ErrorNegocio("El perfil no existe o está inhabilitado");
-  if (existente) throw new ErrorNegocio("El nombre de usuario ya está en uso");
+  if (!pf || !pf.estado) throw new ErrorNegocio("El perfil no existe o está inhabilitado", "idperfil");
+  if (existente) throw new ErrorNegocio("El nombre de usuario ya está en uso", "nombreu");
 }
 
 // Alta de `usuario` + credencial (hash) vía Better Auth. Valida 1 persona <-> 1 usuario.
 export async function crearUsuario({ nombreu, contrasena, idperfil, idpersona }: NuevoUsuario) {
   const [p] = await db.select().from(persona).where(eq(persona.idpersona, idpersona));
-  if (!p || !p.estado) throw new ErrorNegocio("La persona no existe o está inhabilitada");
+  if (!p || !p.estado) throw new ErrorNegocio("La persona no existe o está inhabilitada", "idpersona");
   if ((await db.select().from(user).where(eq(user.idpersona, idpersona))).length)
-    throw new ErrorNegocio("Esa persona ya tiene un usuario");
+    throw new ErrorNegocio("Esa persona ya tiene un usuario", "idpersona");
   await validarAltaUsuario(nombreu, idperfil);
 
   const ctx = await auth.$context;
@@ -75,6 +75,25 @@ export async function crearUsuario({ nombreu, contrasena, idperfil, idpersona }:
     password: await ctx.password.hash(contrasena),
   });
   return creado.id;
+}
+
+// Inhabilitar un usuario es también inhabilitar a ese productor o comprador: las tres gestiones pasan por aquí.
+export async function cambiarEstadoUsuario(idusuario: string, estado: 0 | 1, actor: { idusuario: string }) {
+  if (idusuario === actor.idusuario && estado === 0) throw new ErrorNegocio("No puede inhabilitar su propio usuario");
+  if (estado) {
+    // Un usuario activo siempre tiene persona y perfil activos: por eso ellos no se pueden inhabilitar con usuarios activos.
+    const [de] = await db
+      .select({ persona: persona.estado, perfil: perfil.estado })
+      .from(user)
+      .innerJoin(persona, eq(user.idpersona, persona.idpersona))
+      .innerJoin(perfil, eq(user.idperfil, perfil.idperfil))
+      .where(eq(user.id, idusuario));
+    if (de && !de.persona) throw new ErrorNegocio("No se puede habilitar: su persona está inhabilitada. Habilítela primero en Gestión Persona");
+    if (de && !de.perfil) throw new ErrorNegocio("No se puede habilitar: su perfil está inhabilitado. Habilítelo primero en Gestión Perfil");
+  }
+  const r = await db.update(user).set({ estado }).where(eq(user.id, idusuario)).returning({ id: user.id });
+  if (!r.length) throw new ErrorNegocio("El usuario no existe");
+  if (!estado) await (await auth.$context).internalAdapter.deleteUserSessions(idusuario);
 }
 
 // Verifica la contraseña sin abrir sesión (para decidir antes de ingresar).

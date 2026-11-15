@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { persona, user } from "@/db/schema";
-import { correr, ErrorNegocio, type Resultado } from "@/lib/errores";
-import { crearPersona, filaPersona, nombreCompleto } from "@/lib/personas";
-import { exigir } from "@/lib/session";
+import { correr, ErrorNegocio, errorDependientes, type Resultado } from "@/lib/errores";
+import { rolDe } from "@/lib/permisos";
+import { crearPersona, filaPersona, modificarPersona } from "@/lib/personas";
+import { modificarConRol } from "@/lib/roles";
+import { exigir, getUsuario } from "@/lib/session";
 import { personaSchema, plano } from "@/lib/validators";
 import { exigirCorreoConfiable } from "@/lib/verificacion";
 
@@ -17,25 +19,7 @@ export async function guardarPersona(modo: "crear" | "modificar", fd: FormData):
     if (modo === "crear") {
       await exigirCorreoConfiable(p.correo);
       await crearPersona(p);
-    } else {
-      const [actual] = await db.select().from(persona).where(eq(persona.idpersona, p.idpersona));
-      if (!actual) throw new ErrorNegocio("La persona no existe");
-      const cambiaCorreo = actual.correo !== p.correo;
-      if (cambiaCorreo) {
-        const [otro] = await db
-          .select()
-          .from(persona)
-          .where(and(eq(persona.correo, p.correo), ne(persona.idpersona, p.idpersona)));
-        if (otro) throw new ErrorNegocio("Ya existe una persona con ese correo");
-        await exigirCorreoConfiable(p.correo);
-      }
-      await db.update(persona).set(p).where(eq(persona.idpersona, p.idpersona));
-      // El usuario enlazado conserva correo y nombre sincronizados; un correo nuevo debe verificarse otra vez.
-      await db
-        .update(user)
-        .set({ email: p.correo, name: nombreCompleto(p), ...(cambiaCorreo && { emailVerified: false }) })
-        .where(eq(user.idpersona, p.idpersona));
-    }
+    } else await modificarPersona(p);
     revalidatePath("/persona");
     return modo === "crear" ? "Persona guardada correctamente" : "Persona modificada correctamente";
   });
@@ -45,6 +29,13 @@ export async function inhabilitarPersona(id: string, estado: 0 | 1): Promise<Res
   return correr(async () => {
     const u = await exigir("persona", "inhabilitar");
     if (id === u.idpersona && estado === 0) throw new ErrorNegocio("No puede inhabilitar su propia persona");
+    if (!estado) {
+      const [activo] = await db
+        .select({ nombreu: user.username })
+        .from(user)
+        .where(and(eq(user.idpersona, id), eq(user.estado, 1)));
+      if (activo) throw errorDependientes("la persona", `su usuario «${activo.nombreu}» está activo; inhabilítelo primero`);
+    }
     const r = await db.update(persona).set({ estado }).where(eq(persona.idpersona, id)).returning();
     if (!r.length) throw new ErrorNegocio("La persona no existe");
     revalidatePath("/persona");
@@ -60,5 +51,19 @@ export async function consultarPersona(q: string): Promise<Resultado> {
     const [fila] = await db.select().from(persona).where(eq(persona.idpersona, id));
     if (!fila) throw new ErrorNegocio("No se encontró una persona con esa identificación");
     return { mensaje: "Persona encontrada", fila: filaPersona(fila) };
+  });
+}
+
+// «Mis datos»: el productor o el comprador modifica sus propios datos, nunca su documento ni su estado.
+export async function guardarMisDatos(_modo: "crear" | "modificar", fd: FormData): Promise<Resultado> {
+  return correr(async () => {
+    const u = await getUsuario();
+    if (!u) throw new ErrorNegocio("Su sesión expiró. Ingrese de nuevo");
+    const rol = rolDe(u.idperfil);
+    if (!rol) throw new ErrorNegocio("No tiene permiso para esta acción");
+    // El documento sale de la sesión: lo que venga en el formulario no cuenta.
+    await modificarConRol(rol, { ...plano(fd), idpersona: u.idpersona });
+    revalidatePath("/mis-datos");
+    return "Sus datos fueron actualizados";
   });
 }

@@ -1,10 +1,12 @@
+import Link from "next/link";
 import { count, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { perfil, persona, user } from "@/db/schema";
+import { categoria, perfil, persona, producto, user } from "@/db/schema";
+import { menuDe } from "@/lib/menu";
 import { getUsuario } from "@/lib/session";
 
 const FLUJO = [
-  ["1", "El productor publica", "Producto, cantidad, precio y fecha de cosecha en el catálogo."],
+  ["1", "El productor publica", "Producto, empaque, precio y descuento en el catálogo."],
   ["2", "El comprador pide", "Por la web o por WhatsApp: texto, nota de voz o foto."],
   ["3", "El agente recomienda", "Combina precio, cercanía y reputación del vendedor."],
   ["4", "Pedido y entrega", "El productor confirma y ambos acuerdan la entrega."],
@@ -13,9 +15,11 @@ const FLUJO = [
 
 export default async function Panel() {
   const u = (await getUsuario())!;
-  const contar = async (t: typeof persona | typeof user | typeof perfil) =>
+  const contar = async (t: typeof persona | typeof user | typeof perfil | typeof categoria | typeof producto) =>
     (await db.select({ n: count() }).from(t).where(eq(t.estado, 1)))[0].n;
-  const [personas, usuarios, perfiles] = await Promise.all([contar(persona), contar(user), contar(perfil)]);
+  const [personas, usuarios, perfiles, categorias, productos] = await Promise.all(
+    [persona, user, perfil, categoria, producto].map(contar),
+  );
 
   return (
     <div className="space-y-8">
@@ -30,8 +34,10 @@ export default async function Panel() {
         </p>
       </section>
 
-      <section aria-label="Resumen" className="grid gap-4 sm:grid-cols-3">
+      <section aria-label="Resumen" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {[
+          ["Productos publicados", productos],
+          ["Categorías activas", categorias],
           ["Personas activas", personas],
           ["Usuarios activos", usuarios],
           ["Perfiles activos", perfiles],
@@ -41,6 +47,23 @@ export default async function Panel() {
             <p className="text-4xl font-extrabold text-hoja-700">{n}</p>
           </div>
         ))}
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-bold text-hoja-900">Sus opciones</h2>
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {menuDe(u).map((o) => (
+            <li key={o.href}>
+              <Link href={o.href} className="flex h-full items-start gap-3 rounded-2xl bg-white p-4 shadow transition hover:-translate-y-0.5 hover:shadow-lg">
+                <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-hoja-100 text-xl">{o.icono}</span>
+                <span>
+                  <span className="block font-semibold text-hoja-900">{o.label}</span>
+                  <span className="block text-sm text-gray-600">{o.detalle}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section>

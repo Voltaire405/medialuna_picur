@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { registrar } from "@/actions/auth";
 import { ClaveInput } from "./ClaveInput";
-import { aMinuscula, enviar } from "./enviar";
+import { aMinuscula, enviar, soloDigitos } from "./enviar";
 import { Mensaje } from "./Mensaje";
 
 function Seccion({ icono, titulo, children }: { icono: string; titulo: string; children: React.ReactNode }) {
@@ -19,28 +19,45 @@ function Seccion({ icono, titulo, children }: { icono: string; titulo: string; c
   );
 }
 
+type Opciones = React.InputHTMLAttributes<HTMLInputElement> & { digitos?: boolean };
+
 export function RegistroForm() {
   const [r, accion, pendiente] = useActionState(registrar, null);
-  const f = (name: string, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
-    <div>
-      <label htmlFor={name} className="etiqueta">
-        {label}
-        {props.required && <span className="text-red-600"> *</span>}
-      </label>
-      {props.type === "password" ? (
-        <ClaveInput id={name} name={name} {...props} />
-      ) : (
-        <input id={name} name={name} className="campo" {...props} />
-      )}
-    </div>
-  );
+  // Aviso inmediato cuando se intenta digitar una letra en un campo numérico.
+  const [avisos, setAvisos] = useState<Record<string, string>>({});
+  const f = (name: string, label: string, { digitos, ...props }: Opciones = {}) => {
+    const error = avisos[name] ?? r?.errores?.[name];
+    const comunes = { id: name, name, "aria-invalid": !!error, "aria-describedby": error ? `${name}-error` : undefined, ...props };
+    return (
+      <div>
+        <label htmlFor={name} className="etiqueta">
+          {label}
+          {props.required && <span className="text-red-600"> *</span>}
+        </label>
+        {props.type === "password" ? (
+          <ClaveInput {...comunes} />
+        ) : (
+          <input
+            className="campo"
+            {...comunes}
+            inputMode={digitos ? "numeric" : props.inputMode}
+            onInput={(e) => {
+              props.onInput?.(e);
+              if (digitos) setAvisos({ ...avisos, [name]: soloDigitos(e) ? "Solo se permiten números" : "" });
+            }}
+          />
+        )}
+        {error && <p id={`${name}-error`} role="alert" className="mt-1 text-xs font-semibold text-red-700">{error}</p>}
+      </div>
+    );
+  };
 
   return (
-    <form onSubmit={enviar(accion)} className="space-y-8">
+    <form noValidate onSubmit={enviar(accion)} className="space-y-8">
       <Seccion icono="🧺" titulo="¿Quién es usted?">
         <div className="grid gap-4 sm:grid-cols-2">
-          {f("idpersona", "Identificación", { required: true, inputMode: "numeric", maxLength: 15 })}
-          {f("fecha_nac", "Fecha de nacimiento", { type: "date" })}
+          {f("idpersona", "Identificación", { required: true, digitos: true, maxLength: 15 })}
+          {f("fecha_nac", "Fecha de nacimiento", { required: true, type: "date" })}
           {f("nom1", "Primer nombre", { required: true })}
           {f("nom2", "Segundo nombre")}
           {f("apell1", "Primer apellido", { required: true })}
@@ -50,10 +67,9 @@ export function RegistroForm() {
 
       <Seccion icono="📍" titulo="¿Dónde lo encontramos?">
         <div className="grid gap-4 sm:grid-cols-2">
-          {f("movil", "Móvil", { required: true, inputMode: "tel", maxLength: 10, placeholder: "3001234567" })}
-          {f("tele", "Teléfono", { inputMode: "tel", maxLength: 10 })}
+          {f("movil", "Teléfono celular (WhatsApp)", { required: true, digitos: true, maxLength: 10, placeholder: "3001234567" })}
           {f("correo", "Correo electrónico (no temporal)", { required: true, type: "email", placeholder: "nombre@correo.com" })}
-          {f("direccion", "Dirección (vereda / municipio)", { placeholder: "Vereda La Esperanza, Marinilla" })}
+          {f("direccion", "Dirección de entrega (vereda / municipio)", { required: true, placeholder: "Vereda La Esperanza, Marinilla" })}
         </div>
       </Seccion>
 

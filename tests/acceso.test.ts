@@ -127,9 +127,13 @@ describe("recuperación de usuario y contraseña", () => {
 });
 
 describe("registro público", () => {
-  const base = { idpersona: "44444", nom1: "Luis", apell1: "Gil", movil: "3109876543", correo: "luis@mail.com", nombreu: "luis", contrasena: "clave1234", idperfil: "2", autoriza: "on" };
+  const base = { idpersona: "44444", nom1: "Luis", apell1: "Gil", movil: "3109876543", direccion: "Calle 10 # 4-20, Rionegro", fecha_nac: "1995-03-14", correo: "luis@mail.com", nombreu: "luis", contrasena: "clave1234", idperfil: "2", autoriza: "on" };
   it("exige autorización de datos", async () => {
     expect((await m.acciones.registrar(null, fd({ ...base, autoriza: "" }))).mensaje).toMatch(/Ley 1581/);
+  });
+  it("el comprador que se registra debe dar dirección y fecha de nacimiento, y lo ve campo por campo", async () => {
+    const r = await m.acciones.registrar(null, fd({ ...base, direccion: "", fecha_nac: "", contrasena: "corta" }));
+    expect(r.errores).toEqual({ direccion: "Campo requerido", fecha_nac: "Campo requerido", contrasena: "La contraseña debe tener al menos 8 caracteres" });
   });
   it.each([
     ["luis@mailinator.com", /desechables/],
@@ -139,7 +143,8 @@ describe("registro público", () => {
   ])("rechaza correo no confiable %s", async (correo, msg) => {
     vi.stubEnv("DEVELOPMENT_STAGE", "FALSE");
     try {
-      expect((await m.acciones.registrar(null, fd({ ...base, correo }))).mensaje).toMatch(msg);
+      const r = await m.acciones.registrar(null, fd({ ...base, correo }));
+      expect(r.errores?.correo ?? r.mensaje).toMatch(msg);
     } finally {
       vi.unstubAllEnvs();
     }

@@ -30,7 +30,8 @@ export default async function UsuarioPage() {
   const conUsuario = new Set(filas.map((f) => f.idpersona)); // 1 persona = 1 usuario (incluye inhabilitados)
   return (
     <GestionForm
-      titulo="Usuario"
+      titulo="Gestión Usuario"
+      registro="usuario"
       idCampo="idusuario"
       buscarPor="nombre de usuario"
       campos={[
@@ -79,7 +80,7 @@ export default async function UsuarioPage() {
         { name: "verificadoTxt", label: "Verificado" },
       ]}
       filas={filas}
-      permisos={permisosDe(u.esAdmin, "usuario")}
+      permisos={permisosDe(u.idperfil, "usuario")}
       acciones={{ guardar: guardarUsuario, inhabilitar: inhabilitarUsuario, consultar: consultarUsuario }}
     />
   );

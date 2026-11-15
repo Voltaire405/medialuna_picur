@@ -10,12 +10,13 @@ export default async function PerfilPage() {
   const filas = (await db.select().from(perfil).orderBy(perfil.idperfil)).map(filaPerfil);
   return (
     <GestionForm
-      titulo="Perfil"
+      titulo="Gestión Perfil"
+      registro="perfil"
       idCampo="idperfil"
       buscarPor="ID de perfil"
       campos={[
         { name: "idperfil", label: "ID Perfil", bloqueado: "siempre", soloEdicion: true, ayuda: "Se asigna automáticamente" },
-        { name: "descripc", label: "Descripción", requerido: true, maxLength: 40, ayuda: "Ej.: Asociación, Técnico. Un perfil nuevo no tiene acceso a las gestiones (solo el administrador)" },
+        { name: "descripc", label: "Descripción", requerido: true, maxLength: 40, ayuda: "Ej.: Asociación, Técnico. Un perfil nuevo no tiene acceso a las gestiones: solo consulta el catálogo" },
       ]}
       columnas={[
         { name: "idperfil", label: "ID" },
@@ -23,7 +24,7 @@ export default async function PerfilPage() {
         { name: "alcance", label: "Qué puede hacer" },
       ]}
       filas={filas}
-      permisos={permisosDe(u.esAdmin, "perfil")}
+      permisos={permisosDe(u.idperfil, "perfil")}
       acciones={{ guardar: guardarPerfil, inhabilitar: inhabilitarPerfil, consultar: consultarPerfil }}
     />
   );

@@ -9,12 +9,11 @@ import { auth } from "@/lib/auth";
 import { MSG, validarAcceso } from "@/lib/acceso";
 import { correr, ErrorNegocio, type Resultado } from "@/lib/errores";
 import { enviarCorreo } from "@/lib/mail";
-import { COMPRADOR_PERFIL } from "@/lib/permisos";
-import { crearPersona } from "@/lib/personas";
+import { altaConRol } from "@/lib/roles";
 import { getUsuario } from "@/lib/session";
-import { buscarUsuario, cambiarContrasena, contrasenaValida, crearUsuario, validarAltaUsuario } from "@/lib/usuarios";
-import { contrasenaSchema, personaSchema, plano, usuarioSchema } from "@/lib/validators";
-import { confirmarVerificacion, enviarVerificacion, exigeVerificacion, exigirCorreoConfiable } from "@/lib/verificacion";
+import { buscarUsuario, cambiarContrasena, contrasenaValida } from "@/lib/usuarios";
+import { contrasenaSchema, plano } from "@/lib/validators";
+import { confirmarVerificacion, enviarVerificacion, exigeVerificacion } from "@/lib/verificacion";
 
 export async function ingresar(_: Resultado | null, fd: FormData): Promise<Resultado> {
   const f = plano(fd);
@@ -80,28 +79,14 @@ export async function recuperar(_: Resultado | null, fd: FormData): Promise<Resu
   });
 }
 
-// Registrarse (Gestión Persona sin sesión): solo compradores. Al productor lo da de alta el administrador.
+// Registrarse (sin sesión): solo compradores, con los mismos campos obligatorios que en Gestión Compradores.
+// Al productor lo da de alta el administrador.
 export async function registrar(_: Resultado | null, fd: FormData): Promise<Resultado> {
   return correr(async () => {
     const f = plano(fd);
-    if (f.autoriza !== "on") throw new ErrorNegocio("Debe autorizar el tratamiento de datos personales (Ley 1581 de 2012)");
-    const p = personaSchema.parse(f);
-    // El perfil lo fija el servidor después del spread: el cliente no puede colar otro.
-    const { nombreu, idperfil } = usuarioSchema.parse({ ...f, idpersona: p.idpersona, idperfil: COMPRADOR_PERFIL });
-    const contrasena = contrasenaSchema.parse(f.contrasena);
-    await exigirCorreoConfiable(p.correo);
-    // Todo lo validable va antes de la primera escritura: nunca se borra una persona.
-    // ponytail: un fallo inesperado entre ambos inserts (BD caída) deja la persona sin usuario;
-    // el administrador puede crearle el usuario desde Gestión Usuario.
-    await validarAltaUsuario(nombreu, idperfil);
-    await crearPersona({ ...p, fecha_autoriza: new Date() });
-    const idusuario = await crearUsuario({ nombreu, contrasena, idperfil, idpersona: p.idpersona });
-    // Para el comprador la verificación es opcional: si el correo falla, el registro sigue siendo válido.
-    try {
-      await enviarVerificacion(idusuario, p.correo);
-    } catch (e) {
-      console.error(e);
-    }
+    if (f.autoriza !== "on") throw new ErrorNegocio("Debe autorizar el tratamiento de datos personales (Ley 1581 de 2012)", "autoriza");
+    // El rol lo fija el servidor: el formulario no puede colar otro perfil.
+    await altaConRol("comprador", f, new Date());
     return "Registro exitoso. Ya puede ingresar; le enviamos un enlace para verificar su correo";
   });
 }

@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, count, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { perfil } from "@/db/schema";
-import { correr, ErrorNegocio, type Resultado } from "@/lib/errores";
+import { perfil, user } from "@/db/schema";
+import { correr, ErrorNegocio, errorDependientes, type Resultado } from "@/lib/errores";
 import { esPerfilSistema, filaPerfil } from "@/lib/permisos";
 import { exigir } from "@/lib/session";
 import { perfilSchema, plano } from "@/lib/validators";
@@ -17,12 +17,12 @@ export async function guardarPerfil(modo: "crear" | "modificar", fd: FormData): 
     const id = Number(f.idperfil);
     const repetido = sql`lower(${perfil.descripc}) = lower(${descripc})`;
     if (modo === "crear") {
-      if ((await db.select().from(perfil).where(repetido)).length) throw new ErrorNegocio("Ya existe un perfil con esa descripción");
+      if ((await db.select().from(perfil).where(repetido)).length) throw new ErrorNegocio("Ya existe un perfil con esa descripción", "descripc");
       await db.insert(perfil).values({ descripc });
     } else {
       if (esPerfilSistema(id)) throw new ErrorNegocio("Los perfiles del sistema (Administrador, Productor, Comprador) no se pueden modificar");
       if ((await db.select().from(perfil).where(and(repetido, ne(perfil.idperfil, id)))).length)
-        throw new ErrorNegocio("Ya existe un perfil con esa descripción");
+        throw new ErrorNegocio("Ya existe un perfil con esa descripción", "descripc");
       const r = await db.update(perfil).set({ descripc }).where(eq(perfil.idperfil, id)).returning();
       if (!r.length) throw new ErrorNegocio("El perfil no existe");
     }
@@ -36,7 +36,14 @@ export async function inhabilitarPerfil(id: string, estado: 0 | 1): Promise<Resu
     await exigir("perfil", "inhabilitar");
     if (esPerfilSistema(Number(id)))
       throw new ErrorNegocio("Los perfiles del sistema (Administrador, Productor, Comprador) no se pueden inhabilitar");
-    const r = await db.update(perfil).set({ estado }).where(eq(perfil.idperfil, Number(id))).returning();
+    if (!estado) {
+      const [{ n }] = await db
+        .select({ n: count() })
+        .from(user)
+        .where(and(eq(user.idperfil, Number(id)), eq(user.estado, 1)));
+      if (n) throw errorDependientes("el perfil", n === 1 ? "1 usuario activo lo tiene asignado" : `${n} usuarios activos lo tienen asignado`);
+    }
+    const r =await db.update(perfil).set({ estado }).where(eq(perfil.idperfil, Number(id))).returning();
     if (!r.length) throw new ErrorNegocio("El perfil no existe");
     revalidatePath("/perfil");
     return estado ? "Perfil habilitado" : "Perfil inhabilitado";

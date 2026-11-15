@@ -1,4 +1,5 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+import { blob, check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // estado: 1 = activo, 0 = inhabilitado (borrado lógico, nunca DELETE).
 const estado = () => integer("estado").notNull().default(1);
@@ -47,6 +48,40 @@ export const user = sqliteTable("usuario", {
   createdAt: fecha("created_at").$defaultFn(ahora),
   updatedAt: fecha("updated_at").$defaultFn(ahora).$onUpdateFn(ahora),
 });
+
+export const categoria = sqliteTable("categoria", {
+  codigotp: text("codigotp").primaryKey(),
+  descripcion: text("descripcion").notNull().unique(),
+  estado: estado(),
+});
+
+// Productor = persona cuyo usuario tiene el perfil Productor: no hay tabla propia que duplique sus datos.
+// El precio final no se guarda: se calcula de precio_venta y descuento.
+export const producto = sqliteTable(
+  "producto",
+  {
+    codigo: text("codigo").primaryKey(),
+    nombre: text("nombre").notNull(),
+    // ponytail: la imagen (JPG/PNG de hasta 2 MB) vive en la BD porque el disco de Vercel no persiste;
+    // pasar a almacenamiento de objetos con miniaturas cuando el catálogo crezca.
+    imagen: blob("imagen", { mode: "buffer" }),
+    precio_venta: integer("precio_venta").notNull(), // pesos por empaque
+    empaque_unidades: integer("empaque_unidades").notNull(),
+    descuento: integer("descuento").notNull().default(0), // porcentaje
+    codigotp: text("codigotp")
+      .notNull()
+      .references(() => categoria.codigotp),
+    idproductor: text("idproductor")
+      .notNull()
+      .references(() => persona.idpersona),
+    estado: estado(),
+  },
+  (t) => [
+    check("producto_precio_positivo", sql`${t.precio_venta} > 0`),
+    check("producto_empaque_positivo", sql`${t.empaque_unidades} > 0`),
+    check("producto_descuento_porcentaje", sql`${t.descuento} between 0 and 100`),
+  ],
+);
 
 export const session = sqliteTable("sesion", {
   id: text("id").primaryKey(),

@@ -8,6 +8,15 @@ export const aMinuscula = (e: FormEvent<HTMLInputElement>) => {
   el.setSelectionRange(a, b);
 };
 
+// Descarta lo que no sea dígito mientras se escribe (cédula, teléfono). Devuelve si descartó algo.
+export const soloDigitos = (e: FormEvent<HTMLInputElement>) => {
+  const el = e.currentTarget;
+  const digitos = el.value.replace(/\D/g, "");
+  const descarto = digitos !== el.value;
+  if (descarto) el.value = digitos;
+  return descarto;
+};
+
 // Envía sin el reset automático de formularios de React 19 (conserva lo digitado si hay error).
 export const enviar = (accion: (fd: FormData) => void) => (e: FormEvent<HTMLFormElement>) => {
   e.preventDefault();

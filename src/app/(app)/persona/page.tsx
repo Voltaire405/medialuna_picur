@@ -7,14 +7,14 @@ import { filaPersona } from "@/lib/personas";
 import { exigirPagina } from "@/lib/session";
 
 const campos: Campo[] = [
-  { name: "idpersona", label: "ID Persona (identificación)", requerido: true, bloqueado: "edicion", maxLength: 15 },
+  { name: "idpersona", label: "ID Persona (identificación)", requerido: true, bloqueado: "edicion", maxLength: 15, soloDigitos: true },
   { name: "nom1", label: "Primer nombre", requerido: true, maxLength: 60 },
   { name: "nom2", label: "Segundo nombre", maxLength: 60 },
   { name: "apell1", label: "Primer apellido", requerido: true, maxLength: 60 },
   { name: "apell2", label: "Segundo apellido", maxLength: 60 },
   { name: "direccion", label: "Dirección (vereda / municipio)", maxLength: 120 },
-  { name: "tele", label: "Teléfono", tipo: "tel", maxLength: 10 },
-  { name: "movil", label: "Móvil", tipo: "tel", requerido: true, maxLength: 10, ayuda: "10 dígitos, empieza por 3" },
+  { name: "tele", label: "Teléfono", tipo: "tel", maxLength: 10, soloDigitos: true },
+  { name: "movil", label: "Móvil", tipo: "tel", requerido: true, maxLength: 10, soloDigitos: true, ayuda: "10 dígitos, empieza por 3" },
   { name: "correo", label: "Correo electrónico", tipo: "email", requerido: true, maxLength: 120 },
   { name: "fecha_nac", label: "Fecha de nacimiento", tipo: "date" },
   { name: "fecha_autoriza", label: "Autorizó datos (Ley 1581)", bloqueado: "siempre", soloEdicion: true, ayuda: "Se registra al registrarse o al verificar el correo" },
@@ -25,7 +25,8 @@ export default async function PersonaPage() {
   const filas = (await db.select().from(persona).orderBy(persona.idpersona)).map(filaPersona);
   return (
     <GestionForm
-      titulo="Persona"
+      titulo="Gestión Persona"
+      registro="persona"
       idCampo="idpersona"
       buscarPor="identificación"
       campos={campos}
@@ -36,7 +37,7 @@ export default async function PersonaPage() {
         { name: "correo", label: "Correo" },
       ]}
       filas={filas}
-      permisos={permisosDe(u.esAdmin, "persona")}
+      permisos={permisosDe(u.idperfil, "persona")}
       acciones={{ guardar: guardarPersona, inhabilitar: inhabilitarPersona, consultar: consultarPersona }}
     />
   );

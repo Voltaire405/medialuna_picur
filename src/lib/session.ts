@@ -28,7 +28,7 @@ export type UsuarioActual = NonNullable<Awaited<ReturnType<typeof getUsuario>>>;
 export async function exigirPagina(gestion: Gestion): Promise<UsuarioActual> {
   const u = await getUsuario();
   if (!u) redirect("/login");
-  if (!puede(u.esAdmin, gestion, "consultar")) redirect("/");
+  if (!puede(u.idperfil, gestion, "consultar")) redirect("/");
   return u;
 }
 
@@ -36,6 +36,6 @@ export async function exigirPagina(gestion: Gestion): Promise<UsuarioActual> {
 export async function exigir(gestion: Gestion, accion: Accion): Promise<UsuarioActual> {
   const u = await getUsuario();
   if (!u) throw new ErrorNegocio("Su sesión expiró. Ingrese de nuevo");
-  if (!puede(u.esAdmin, gestion, accion)) throw new ErrorNegocio("No tiene permiso para esta acción");
+  if (!puede(u.idperfil, gestion, accion)) throw new ErrorNegocio("No tiene permiso para esta acción");
   return u;
 }

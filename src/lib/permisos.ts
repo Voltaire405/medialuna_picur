@@ -1,5 +1,3 @@
-// Permisos: las tres gestiones (Perfil, Usuario y Persona) son exclusivas del Administrador.
-// El autorregistro de compradores es /registro, sin sesión.
 // Ids sembrados en src/db/seed.ts.
 export const ADMIN_PERFIL = 1;
 export const PRODUCTOR_PERFIL = 2; // lo da de alta el administrador; debe verificar su correo
@@ -9,15 +7,20 @@ export const COMPRADOR_PERFIL = 3; // único perfil autorregistrable; verificaci
 // (inhabilitar Comprador rompería el registro; Productor dejaría fuera a todos los productores).
 export const esPerfilSistema = (id: number) => id === ADMIN_PERFIL || id === PRODUCTOR_PERFIL || id === COMPRADOR_PERFIL;
 
+// Productor y Comprador son los dos perfiles que además son un rol del mercado, con datos propios que gestionar.
+export type Rol = "productor" | "comprador";
+export const rolDe = (idperfil: number): Rol | null =>
+  idperfil === PRODUCTOR_PERFIL ? "productor" : idperfil === COMPRADOR_PERFIL ? "comprador" : null;
+
 // Qué puede hacer cada perfil, para mostrarlo en Gestión Perfil.
 export const alcanceDe = (id: number) =>
   id === ADMIN_PERFIL
-    ? "Todas las gestiones"
+    ? "Todas las gestiones · consulta e inhabilita productos"
     : id === PRODUCTOR_PERFIL
-      ? "Sin gestiones · comprará y publicará · lo crea el administrador · verifica su correo"
+      ? "Publica sus productos · consulta el catálogo · lo crea el administrador · verifica su correo"
       : id === COMPRADOR_PERFIL
-        ? "Sin gestiones · comprará · se registra solo"
-        : "Sin gestiones";
+        ? "Consulta el catálogo · se registra solo"
+        : "Sin gestiones · consulta el catálogo";
 
 // Fila para Gestión Perfil: alcance visible y marca de protegido (el formulario oculta Modificar/Inhabilitar).
 export const filaPerfil = (p: { idperfil: number; descripc: string; estado: number }) => ({
@@ -26,17 +29,44 @@ export const filaPerfil = (p: { idperfil: number; descripc: string; estado: numb
   protegido: esPerfilSistema(p.idperfil) ? 1 : 0,
 });
 
-export type Gestion = "perfil" | "usuario" | "persona";
 export type Accion = "crear" | "consultar" | "modificar" | "inhabilitar";
+type Permisos = Record<Accion, readonly number[]>;
 
-// Hoy todo es exclusivo del administrador; se conservan gestion/accion como punto de extensión de la matriz.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const puede = (esAdmin: boolean, _gestion: Gestion, _accion: Accion): boolean => esAdmin;
+const SOLO_ADMIN: Permisos = {
+  crear: [ADMIN_PERFIL],
+  consultar: [ADMIN_PERFIL],
+  modificar: [ADMIN_PERFIL],
+  inhabilitar: [ADMIN_PERFIL],
+};
+
+// Matriz de permisos: qué perfiles pueden ejecutar cada acción de cada gestión.
+// El catálogo, «Mis datos» y «Mi contraseña» no son gestiones: basta la sesión (y el perfil, en «Mis datos»).
+const MATRIZ = {
+  perfil: SOLO_ADMIN,
+  usuario: SOLO_ADMIN,
+  persona: SOLO_ADMIN,
+  productor: SOLO_ADMIN,
+  comprador: SOLO_ADMIN,
+  categoria: SOLO_ADMIN,
+  // El productor gestiona solo sus productos (la propiedad se valida en lib/productos.ts);
+  // el administrador consulta todos e inhabilita los que incumplan las políticas.
+  producto: {
+    crear: [PRODUCTOR_PERFIL],
+    consultar: [ADMIN_PERFIL, PRODUCTOR_PERFIL],
+    modificar: [PRODUCTOR_PERFIL],
+    inhabilitar: [ADMIN_PERFIL, PRODUCTOR_PERFIL],
+  },
+} satisfies Record<string, Permisos>;
+
+export type Gestion = keyof typeof MATRIZ;
+
+export const puede = (idperfil: number, gestion: Gestion, accion: Accion): boolean =>
+  (MATRIZ[gestion] as Permisos)[accion].includes(idperfil);
 
 // Los 4 botones de una gestión, derivados de la misma matriz que valida el servidor.
-export const permisosDe = (esAdmin: boolean, gestion: Gestion) => ({
-  crear: puede(esAdmin, gestion, "crear"),
-  consultar: puede(esAdmin, gestion, "consultar"),
-  modificar: puede(esAdmin, gestion, "modificar"),
-  inhabilitar: puede(esAdmin, gestion, "inhabilitar"),
+export const permisosDe = (idperfil: number, gestion: Gestion) => ({
+  crear: puede(idperfil, gestion, "crear"),
+  consultar: puede(idperfil, gestion, "consultar"),
+  modificar: puede(idperfil, gestion, "modificar"),
+  inhabilitar: puede(idperfil, gestion, "inhabilitar"),
 });
