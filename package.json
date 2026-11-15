@@ -12,6 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed.ts",
     "db:setup": "pnpm db:migrate && pnpm db:seed",
+    "db:demo": "tsx src/db/seed-demo.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
