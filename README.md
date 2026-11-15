@@ -1,4 +1,4 @@
-# Medialuna · mercado campesino digital (MVP Parcial I)
+# Medialuna · mercado campesino digital (Parcial I + II)
 
 ## Stack tecnológico
 
@@ -12,9 +12,19 @@ Next.js 16 · Better Auth · Tailwind CSS 4 · Drizzle ORM · Turso (libsql).
 pnpm install
 cp .env.example .env     # definir BETTER_AUTH_SECRET (openssl rand -base64 32)
 pnpm db:setup            # migra y siembra perfiles + administrador
+pnpm db:demo             # opcional: productor, comprador, categorías y productos de ejemplo
 pnpm dev                 # http://localhost:3000
 ```
 
+| Usuario | Perfil | Contraseña por defecto |
+|---|---|---|
+| `admin` | Administrador | `Admin12345` (`SEED_ADMIN_PASSWORD`) |
+| `rosa` | Productor (correo ya verificado, con 3 productos) | `Demo12345` (`SEED_DEMO_PASSWORD`) |
+| `carlos` | Comprador | `Demo12345` |
+
+`pnpm db:ver <tabla>` imprime lo guardado en `perfil`, `persona`, `usuario`, `categoria` o `producto`.
+
+- Al crear personas el correo debe ser de un dominio real (p. ej. `gmail.com`): se comprueba que el dominio reciba correo.
 - Sin `TURSO_DATABASE_URL` usa `file:local.db`. Para Turso: `turso db create`, `turso db tokens create` y completar `.env`.
 - Correo de recuperación: `RESEND_API_KEY` (y `MAIL_FROM`). Sin dominio verificado, Resend solo entrega al correo de la cuenta propietaria. Sin clave, el correo se imprime en consola.
 - `DEVELOPMENT_STAGE` (por defecto `TRUE`): acepta correos desechables como los de yopmail para pruebas. En producción póngala en `FALSE` para rechazarlos.
